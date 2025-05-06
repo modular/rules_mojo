@@ -12,7 +12,7 @@ cc_binary(
     name = "foo",
     srcs = ["foo.c"],
     linkshared = True,
-    deps = [":bar"],
+    deps = [":bar_import"],
 )
 
 cc_binary(
