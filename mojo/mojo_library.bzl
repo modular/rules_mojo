@@ -11,6 +11,7 @@ def _mojo_library_implementation(ctx):
     args.add("package")
     args.add("-strip-file-prefix=.")
     args.add("-o", mojo_package.path)
+    args.add_all(ctx.attr.copts)
 
     import_paths, transitive_mojopkgs = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
     root_directory = ctx.files.srcs[0].dirname
@@ -56,6 +57,14 @@ def _mojo_library_implementation(ctx):
 mojo_library = rule(
     implementation = _mojo_library_implementation,
     attrs = {
+        "copts": attr.string_list(
+            doc = """\
+Additional compiler options to pass to the Mojo compiler.
+
+NOTE: copts from --mojocopt and mojo_toolchain.copts are not passed to 'mojo
+package' since it does not accept many flags.
+""",
+        ),
         "srcs": attr.label_list(
             allow_empty = False,
             allow_files = MOJO_EXTENSIONS,

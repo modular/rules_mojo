@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("//mojo:mojo_library.bzl", "mojo_library")
 
 mojo_library(
@@ -6,5 +7,15 @@ mojo_library(
         "__init__.mojo",
         "package.mojo",
     ],
+    copts = [
+        "-Ifoo",
+    ],
     visibility = ["//tests:__subpackages__"],
+)
+
+build_test(
+    name = "package_build_test",
+    targets = [
+        ":package",
+    ],
 )
