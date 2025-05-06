@@ -1,0 +1,31 @@
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        os:
+          - macos-15
+          - ubuntu-latest
+        bazel:
+          - latest
+          - last_rc
+          - last_green
+      fail-fast: false
+    runs-on: ${{ matrix.os }}
+    env:
+      USE_BAZEL_VERSION: ${{ matrix.bazel }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bazel Info
+        run: |
+          bazel version
+          bazel info
+      - run: bazel test //...
