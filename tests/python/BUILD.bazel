@@ -1,0 +1,15 @@
+load("@rules_mojo_test_deps//:requirements.bzl", "requirement")
+load("//mojo:mojo_test.bzl", "mojo_test")
+
+mojo_test(
+    name = "basic_python_test",
+    srcs = ["basic_python_test.mojo"],
+)
+
+mojo_test(
+    name = "deps_python_test",
+    srcs = ["deps_python_test.mojo"],
+    deps = [
+        requirement("numpy"),
+    ],
+)

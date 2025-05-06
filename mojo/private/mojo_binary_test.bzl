@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain", "use_cpp_toolchain")
+load("@rules_python//python:py_info.bzl", "PyInfo")
 load("//mojo:providers.bzl", "MojoInfo")
 load(":utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo")
 
@@ -16,7 +17,7 @@ _ATTRS = {
     ),
     "copts": attr.string_list(),
     "deps": attr.label_list(
-        providers = [[CcInfo], [MojoInfo]],
+        providers = [[CcInfo], [MojoInfo], [PyInfo]],
     ),
     "data": attr.label_list(allow_files = True),
     "enable_assertions": attr.bool(default = True),
@@ -28,6 +29,7 @@ _ATTRS = {
 
 _TOOLCHAINS = use_cpp_toolchain() + [
     "//:toolchain_type",
+    "@bazel_tools//tools/python:toolchain_type",
 ]
 
 def _find_main(name, srcs, main):
@@ -56,8 +58,9 @@ def _find_main(name, srcs, main):
     fail("Multiple Mojo files provided, but no main file specified. Please set 'main = \"foo.mojo\"' to disambiguate.")
 
 def _mojo_binary_test_implementation(ctx):
-    mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
     cc_toolchain = find_cpp_toolchain(ctx)
+    mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
+    py_toolchain = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"]
 
     object_file = ctx.actions.declare_file(ctx.label.name + ".lo")
     args = ctx.actions.args()
@@ -138,12 +141,23 @@ def _mojo_binary_test_implementation(ctx):
 
     data = ctx.attr.data
     runfiles = ctx.runfiles(ctx.files.data)
-    transitive_runfiles = []
+    transitive_runfiles = [
+        ctx.runfiles(transitive_files = py_toolchain.py3_runtime.files),
+    ]
     for target in data:
         transitive_runfiles.append(target[DefaultInfo].default_runfiles)
 
     # Collect transitive shared libraries that must exist at runtime
+    python_imports = []
     for target in ctx.attr.deps + mojo_toolchain.implicit_deps:
+        transitive_runfiles.append(target[DefaultInfo].default_runfiles)
+
+        if PyInfo in target:
+            python_imports.append(target[PyInfo].imports)
+            transitive_runfiles.append(
+                ctx.runfiles(transitive_files = target[PyInfo].transitive_sources),
+            )
+
         if CcInfo not in target:
             continue
         for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
@@ -151,7 +165,29 @@ def _mojo_binary_test_implementation(ctx):
                 if library.dynamic_library and not library.pic_static_library and not library.static_library:
                     transitive_runfiles.append(ctx.runfiles(transitive_files = depset([library.dynamic_library])))
 
-    runtime_env = dict(ctx.attr.env)
+    python_path = ""
+    for path in depset(transitive = python_imports).to_list():
+        python_path += "../" + path + ":"
+
+    # https://github.com/bazelbuild/rules_python/issues/2262
+    libpython = None
+    for file in py_toolchain.py3_runtime.files.to_list():
+        if file.basename.startswith("libpython"):
+            libpython = file.short_path
+            break  # if there are multiple any of them should work and they are likely symlinks to each other
+
+    if not libpython:
+        fail("failed to find libpython, please report this at https://github.com/modular/rules_mojo/issues")
+
+    runtime_env = dict(ctx.attr.env) | {
+        "MODULAR_PYTHON_EXECUTABLE": py_toolchain.py3_runtime.interpreter.short_path,
+        "MOJO_PYTHON": py_toolchain.py3_runtime.interpreter.short_path,
+        "MOJO_PYTHON_LIBRARY": libpython,
+        "PYTHONEXECUTABLE": py_toolchain.py3_runtime.interpreter.short_path,
+        "PYTHONNOUSERSITE": "affirmative",
+        "PYTHONPATH": python_path,
+        "PYTHONSAFEPATH": "affirmative",
+    }
     for key, value in runtime_env.items():
         runtime_env[key] = ctx.expand_make_variables(
             "env",
