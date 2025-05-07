@@ -104,8 +104,9 @@ def _mojo_binary_test_implementation(ctx):
         progress_message = "%{label} compiling mojo object",
         env = {
             "MODULAR_CRASH_REPORTING_ENABLED": "false",
+            "MODULAR_MOJO_MAX_COMPILERRT_PATH": "/dev/null",  # Make sure this fails if accessed
             "MODULAR_MOJO_MAX_LINKER_DRIVER": "/dev/null",  # Make sure this fails if accessed
-            "MODULAR_MOJO_MAX_LLD_PATH": "/dev/null",  # Make sure this fails if accessed
+            "MODULAR_MOJO_MAX_LLD_PATH": mojo_toolchain.lld.path,
             "MODULAR_MOJO_MAX_ORCRT_PATH": "/dev/null",  # Make sure this fails if accessed
             "TEST_TMPDIR": ".",
         },

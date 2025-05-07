@@ -43,6 +43,7 @@ mojo_toolchain(
         name
         for name, _ in _INTERNAL_LIBRARIES
     ] + ([":all_mojopkgs"] if "{INCLUDE_MOJOPKGS}" else []),
+    lld = "bin/lld",
     mojo = "bin/mojo",
     visibility = ["//visibility:public"],
 )

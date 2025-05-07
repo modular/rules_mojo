@@ -4,7 +4,7 @@ load("//mojo:providers.bzl", "MojoInfo", "MojoToolchainInfo")
 
 def _mojo_toolchain_impl(ctx):
     tool_files = [ctx.attr.mojo[DefaultInfo].files]
-    for dep in ctx.attr.implicit_deps:
+    for dep in ctx.attr.implicit_deps + [ctx.attr.lld]:
         tool_files.append(dep[DefaultInfo].default_runfiles.files)
         tool_files.append(dep[DefaultInfo].files_to_run)
 
@@ -13,6 +13,7 @@ def _mojo_toolchain_impl(ctx):
             mojo_toolchain_info = MojoToolchainInfo(
                 all_tools = tool_files,
                 copts = ctx.attr.copts,
+                lld = ctx.executable.lld,
                 mojo = ctx.executable.mojo,
                 implicit_deps = ctx.attr.implicit_deps,
             ),
@@ -25,6 +26,13 @@ mojo_toolchain = rule(
         "copts": attr.string_list(
             mandatory = False,
             doc = "Additional compiler options to pass to the Mojo compiler.",
+        ),
+        "lld": attr.label(
+            allow_files = True,
+            mandatory = True,
+            executable = True,
+            cfg = "exec",
+            doc = "The lld executable to link with.",
         ),
         "mojo": attr.label(
             allow_files = True,
