@@ -1,20 +1,25 @@
 """MODULE.bazel extensions for Mojo toolchains."""
 
-_PLATFORMS = ["linux_aarch64", "linux_x86_64", "macosx_13_0_arm64"]
-_DEFAULT_VERSION = "25.4.0.dev2025050605"
+_PLATFORMS = ["linux_aarch64", "linux_x86_64", "macos_arm64"]
+_DEFAULT_VERSION = "25.4.0.dev2025050902"
 _KNOWN_SHAS = {
-    "25.4.0.dev2025050605": {
-        "linux_aarch64": "77acfb83a6d9286c79791e6a443f5160b92dbd5aa69fc370b20f8ca76216100a",
-        "linux_x86_64": "35bb85e0101ce0d06eb6731fc18b29d74e15908fb3435465202eb923b80f5f6d",
-        "macosx_13_0_arm64": "98f32b413fa7755bbd612c394647c09dea92810856b3f823ab362f8e42ece110",
+    "25.4.0.dev2025050902": {
+        "linux_aarch64": "d52c67f245575397d8176010d27bd12e76cde297ed8ee7f07dcc73fe48955508",
+        "linux_x86_64": "69898a4ffb328489e5c7c1c7e0cba37cd64dd0fa87b4a98501b3562dc89f2695",
+        "macos_arm64": "8856745cab1cb88fbba174afb9784cbdda865c8a4e4db5693750efefe7505160",
     },
+}
+_PLATFORM_MAPPINGS = {
+    "linux_aarch64": "manylinux_2_34_aarch64",
+    "linux_x86_64": "manylinux_2_34_x86_64",
+    "macos_arm64": "macosx_13_0_arm64",
 }
 
 def _mojo_toolchain_impl(rctx):
     rctx.download_and_extract(
-        url = "https://dl.modular.com/public/max-nightly/python/max-{}-py3-none-{}.whl".format(
+        url = "https://dl.modular.com/public/nightly/python/max-{}-py3-none-{}.whl".format(
             rctx.attr.version,
-            rctx.attr.platform,
+            _PLATFORM_MAPPINGS[rctx.attr.platform],
         ),
         sha256 = _KNOWN_SHAS[rctx.attr.version][rctx.attr.platform],
         type = "zip",
@@ -68,7 +73,7 @@ toolchain(
 """.format(
             platform = platform,
             cpu = "x86_64" if "x86_64" in platform else "aarch64",
-            os = "macos" if "macosx" in platform else "linux",
+            os = "macos" if "macos" in platform else "linux",
         ))
 
     rctx.file("BUILD.bazel", content = "\n".join(lines))
