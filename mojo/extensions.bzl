@@ -21,7 +21,7 @@ def _mojo_toolchain_impl(rctx):
             rctx.attr.version,
             _PLATFORM_MAPPINGS[rctx.attr.platform],
         ),
-        sha256 = _KNOWN_SHAS[rctx.attr.version][rctx.attr.platform],
+        sha256 = _KNOWN_SHAS.get(rctx.attr.version, {}).get(rctx.attr.platform, ""),
         type = "zip",
         strip_prefix = "max-{}.data/platlib/max".format(rctx.attr.version),
     )
