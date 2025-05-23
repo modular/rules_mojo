@@ -17,7 +17,7 @@ _PLATFORM_MAPPINGS = {
 
 def _mojo_toolchain_impl(rctx):
     rctx.download_and_extract(
-        url = "https://dl.modular.com/public/nightly/python/max-{}-py3-none-{}.whl".format(
+        url = rctx.attr.url_override or "https://dl.modular.com/public/nightly/python/max-{}-py3-none-{}.whl".format(
             rctx.attr.version,
             _PLATFORM_MAPPINGS[rctx.attr.platform],
         ),
@@ -46,6 +46,10 @@ _mojo_toolchain_repository = repository_rule(
             doc = "The platform to download the Mojo toolchain for.",
             values = _PLATFORMS,
             mandatory = True,
+        ),
+        "url_override": attr.string(
+            doc = "Override the download URL for the prebuilt package.",
+            default = "",
         ),
         "use_prebuilt_packages": attr.bool(
             doc = "Whether to automatically add prebuilt mojopkgs to every mojo target.",
@@ -106,6 +110,7 @@ def _mojo_impl(mctx):
                 name = name,
                 version = tags.version,
                 platform = platform,
+                url_override = tags.url_override,
                 use_prebuilt_packages = tags.use_prebuilt_packages,
             )
 
@@ -123,6 +128,10 @@ _toolchain_tag = tag_class(
         "version": attr.string(
             doc = "The version of the Mojo toolchain to download.",
             default = _DEFAULT_VERSION,
+        ),
+        "url_override": attr.string(
+            doc = "Override the download URL for the prebuilt package.",
+            default = "",
         ),
         "use_prebuilt_packages": attr.bool(
             doc = "Whether to automatically add prebuilt mojopkgs to every mojo target.",
