@@ -1,5 +1,8 @@
 common --incompatible_strict_action_env
 common --test_output=errors
 
+# https://github.com/bazelbuild/bazel/issues/25145
+info --platforms=
+
 common --platforms=@mojo_host_platform
 common --host_platform=@mojo_host_platform
