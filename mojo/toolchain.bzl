@@ -19,7 +19,7 @@ def _mojo_toolchain_impl(ctx):
         platform_common.ToolchainInfo(
             mojo_toolchain_info = MojoToolchainInfo(
                 all_tools = tool_files,
-                copts = ctx.attr.copts,
+                copts = copts,
                 lld = ctx.executable.lld,
                 mojo = ctx.executable.mojo,
                 implicit_deps = ctx.attr.implicit_deps,
