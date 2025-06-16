@@ -39,6 +39,7 @@ mojo_import(
 
 mojo_toolchain(
     name = "mojo_toolchain",
+    extra_tools = [lib[1] for lib in _INTERNAL_LIBRARIES],
     implicit_deps = [
         name
         for name, _ in _INTERNAL_LIBRARIES
