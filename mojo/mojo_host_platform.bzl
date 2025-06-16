@@ -141,6 +141,8 @@ mojo_host_platform = repository_rule(
         "MOJO_VERBOSE_GPU_DETECT",
     ],
     attrs = {
-        "gpu_mapping": attr.string_dict(),
+        "gpu_mapping": attr.string_dict(
+            doc = "A dictionary of GPU strings from nvidia-smi or amd-smi, mapped to supported GPUs defined by mojo.gpu_toolchains()",
+        ),
     },
 )
