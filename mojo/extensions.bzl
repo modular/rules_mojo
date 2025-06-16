@@ -1,5 +1,7 @@
 """MODULE.bazel extensions for Mojo toolchains."""
 
+load("//mojo:mojo_host_platform.bzl", "mojo_host_platform")
+
 _PLATFORMS = ["linux_aarch64", "linux_x86_64", "macos_arm64"]
 _DEFAULT_VERSION = "25.4.0.dev2025050902"
 _KNOWN_SHAS = {
@@ -90,6 +92,103 @@ _mojo_toolchain_hub = repository_rule(
     },
 )
 
+def _mojo_gpu_toolchains_impl(rctx):
+    rctx.file(
+        "gpus.bzl",
+        """\
+load("@rules_mojo//mojo/private:mojo_gpu_toolchain.bzl", "mojo_gpu_toolchain")
+
+SUPPORTED_GPUS = {}
+
+def declare_gpu_toolchains():
+    for gpu, target_accelerator in SUPPORTED_GPUS.items():
+        mojo_gpu_toolchain(
+            name = gpu,
+            target_accelerator = target_accelerator,
+            multi_gpu = select({{
+                "@mojo_gpu_toolchains//:has_multi_gpu": True,
+                "//conditions:default": False,
+            }}),
+            has_4_gpus = select({{
+                "@mojo_gpu_toolchains//:has_4_gpus": True,
+                "//conditions:default": False,
+            }}),
+        )
+
+        native.toolchain(
+            name = gpu + "_toolchain",
+            toolchain_type = "@rules_mojo//:gpu_toolchain_type",
+            target_compatible_with = ["@mojo_gpu_toolchains//:{{}}_gpu".format(gpu)],
+            toolchain = gpu,
+        )
+""".format(rctx.attr.supported_gpus),
+    )
+
+    rctx.file(
+        "BUILD.bazel",
+        """\
+load(":gpus.bzl", "SUPPORTED_GPUS", "declare_gpu_toolchains")
+
+package(default_visibility = ["//visibility:public"])
+
+constraint_setting(name = "gpu_bool")
+
+constraint_value(
+    name = "has_gpu",
+    constraint_setting = ":gpu_bool",
+)
+
+constraint_setting(name = "multi_gpu_bool")
+
+constraint_value(
+    name = "has_multi_gpu",
+    constraint_setting = ":multi_gpu_bool",
+)
+
+constraint_setting(name = "multi_gpu_4_bool")
+
+constraint_value(
+    name = "has_4_gpus",
+    constraint_setting = ":multi_gpu_4_bool",
+)
+
+constraint_setting(name = "gpu_brand")
+
+constraint_value(
+    name = "amd_gpu",
+    constraint_setting = ":gpu_brand",
+)
+
+constraint_value(
+    name = "nvidia_gpu",
+    constraint_setting = ":gpu_brand",
+)
+
+constraint_setting(name = "gpu_name")
+
+[
+    constraint_value(
+        name = "{}_gpu".format(gpu),
+        constraint_setting = ":gpu_name",
+    )
+    for gpu in SUPPORTED_GPUS.keys()
+]
+
+declare_gpu_toolchains()
+""",
+    )
+
+_mojo_gpu_toolchains = repository_rule(
+    implementation = _mojo_gpu_toolchains_impl,
+    doc = "A Mojo GPU toolchain repository rule.",
+    attrs = {
+        "supported_gpus": attr.string_dict(
+            doc = "The GPUs supported by this toolchain.",
+            mandatory = True,
+        ),
+    },
+)
+
 def _mojo_impl(mctx):
     # TODO: This requires the root module always call mojo.toolchain(), we
     # should improve this.
@@ -98,20 +197,36 @@ def _mojo_impl(mctx):
         if not module.is_root:
             continue
 
+        toolchains = module.tags.toolchain
         if len(module.tags.toolchain) > 1:
             fail("mojo.toolchain() can only be called once per module.")
+        if toolchains:
+            has_toolchains = True
+            tags = toolchains[0]
 
-        has_toolchains = True
-        tags = module.tags.toolchain[0]
+            for platform in _PLATFORMS:
+                name = "mojo_toolchain_{}".format(platform)
+                _mojo_toolchain_repository(
+                    name = name,
+                    version = tags.version,
+                    platform = platform,
+                    url_override = tags.url_override,
+                    use_prebuilt_packages = tags.use_prebuilt_packages,
+                )
 
-        for platform in _PLATFORMS:
-            name = "mojo_toolchain_{}".format(platform)
-            _mojo_toolchain_repository(
-                name = name,
-                version = tags.version,
-                platform = platform,
-                url_override = tags.url_override,
-                use_prebuilt_packages = tags.use_prebuilt_packages,
+        gpu_toolchains = module.tags.gpu_toolchains
+        if len(gpu_toolchains) > 1:
+            fail("mojo.gpu_toolchain() can only be called once per module.")
+        if gpu_toolchains:
+            gpu_toolchain = gpu_toolchains[0]
+            _mojo_gpu_toolchains(
+                name = "mojo_gpu_toolchains",
+                supported_gpus = gpu_toolchain.supported_gpus,
+            )
+
+            mojo_host_platform(
+                name = "mojo_host_platform",
+                gpu_mapping = gpu_toolchain.gpu_mapping,
             )
 
     _mojo_toolchain_hub(
@@ -140,10 +255,57 @@ _toolchain_tag = tag_class(
     },
 )
 
+_gpu_toolchains_tag = tag_class(
+    doc = "Tags for configuring Mojo GPU toolchains.",
+    attrs = {
+        "supported_gpus": attr.string_dict(
+            default = {
+                "780M": "amdgpu:gfx1103",
+                "a10": "nvidia:86",
+                "a100": "nvidia:80",
+                "a3000": "nvidia:86",
+                "b100": "nvidia:100a",
+                "b200": "nvidia:100a",
+                "h100": "nvidia:90a",
+                "h200": "nvidia:90a",
+                "l4": "nvidia:89",
+                "mi300x": "amdgpu:gfx942",
+                "mi325": "amdgpu:gfx942",
+                "rtx5090": "nvidia:120a",
+            },
+            doc = "The GPUs supported by this toolchain, mapping to Mojo's target accelerators.",
+        ),
+        "gpu_mapping": attr.string_dict(
+            default = {
+                " A10G": "a10",
+                "A100-": "a100",
+                " H100 ": "h100",
+                " H200 ": "h200",
+                " L4 ": "L4",
+                " Ada ": "L4",
+                " A3000 ": "a3000",
+                "B100": "b100",
+                "B200": "b200",
+                " RTX 5090": "rtx5090",
+                "Laptop GPU": "",
+                "RTX 4070 Ti": "",
+                "RTX 4080 SUPER": "",
+                "NVIDIA GeForce RTX 3090": "",
+                "MI300X": "mi300x",
+                "MI325": "mi325",
+                "Navi": "radeon",
+                "AMD Radeon Graphics": "radeon",
+            },
+            doc = "The output from nvidia-smi or rocm-smi to the corresponding GPU name in SUPPORTED_GPUS.",
+        ),
+    },
+)
+
 mojo = module_extension(
     doc = "Mojo toolchain extension.",
     implementation = _mojo_impl,
     tag_classes = {
         "toolchain": _toolchain_tag,
+        "gpu_toolchains": _gpu_toolchains_tag,
     },
 )

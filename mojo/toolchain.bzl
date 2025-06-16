@@ -8,6 +8,13 @@ def _mojo_toolchain_impl(ctx):
         tool_files.append(dep[DefaultInfo].default_runfiles.files)
         tool_files.append(dep[DefaultInfo].files_to_run)
 
+    copts = list(ctx.attr.copts)
+    gpu_toolchain = ctx.toolchains["//:gpu_toolchain_type"]
+    if gpu_toolchain:
+        copts.append("--target-accelerator=" + gpu_toolchain.mojo_gpu_toolchain_info.target_accelerator)
+    else:
+        copts.append("--target-accelerator=NONE")
+
     return [
         platform_common.ToolchainInfo(
             mojo_toolchain_info = MojoToolchainInfo(
@@ -58,4 +65,7 @@ mojo_toolchain = rule(
     doc = """\
 Defines the Mojo compiler toolchain.
 """,
+    toolchains = [
+        config_common.toolchain_type("//:gpu_toolchain_type", mandatory = False),
+    ],
 )

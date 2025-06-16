@@ -1,2 +1,5 @@
 common --incompatible_strict_action_env
 common --test_output=errors
+
+common --platforms=@mojo_host_platform
+common --host_platform=@mojo_host_platform
