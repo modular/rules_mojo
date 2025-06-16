@@ -26,6 +26,6 @@ MojoGPUToolchainInfo = provider(
         "has_4_gpus": "Whether the target supports at least 4 GPUs",
         "multi_gpu": "Whether the target supports multiple GPUs",
         "name": "The name of the GPU, e.g., 'a100', 'mi325'",
-        "target_accelerator": "The target accelerator, e.g., '90a', 'gfx942', can be passed to the Mojo compiler",
+        "target_accelerator": "The target accelerator, e.g., 'nvidia:90a', 'amdgpu:gfx942', can be passed to the Mojo compiler",
     },
 )
