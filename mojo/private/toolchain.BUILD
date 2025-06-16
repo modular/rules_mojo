@@ -29,6 +29,15 @@ _INTERNAL_LIBRARIES = [
     for name, library in _INTERNAL_LIBRARIES
 ]
 
+[
+    filegroup(
+        name = name + ".files",
+        srcs = [library],
+        visibility = ["//visibility:private"],
+    )
+    for name, library in _INTERNAL_LIBRARIES
+]
+
 mojo_import(
     name = "all_mojopkgs",
     mojopkgs = glob(
@@ -43,6 +52,10 @@ mojo_toolchain(
         name
         for name, _ in _INTERNAL_LIBRARIES
     ] + ([":all_mojopkgs"] if "{INCLUDE_MOJOPKGS}" else []),
+    runtime_deps = [
+        name + ".files"
+        for name, _ in _INTERNAL_LIBRARIES
+    ],
     lld = "bin/lld",
     mojo = "bin/mojo",
     visibility = ["//visibility:public"],

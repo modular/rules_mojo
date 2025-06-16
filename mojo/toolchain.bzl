@@ -4,7 +4,7 @@ load("//mojo:providers.bzl", "MojoInfo", "MojoToolchainInfo")
 
 def _mojo_toolchain_impl(ctx):
     tool_files = [ctx.attr.mojo[DefaultInfo].files]
-    for dep in ctx.attr.implicit_deps + [ctx.attr.lld]:
+    for dep in ctx.attr.implicit_deps + ctx.attr.runtime_deps + [ctx.attr.lld]:
         tool_files.append(dep[DefaultInfo].default_runfiles.files)
         tool_files.append(dep[DefaultInfo].files_to_run)
 
@@ -46,6 +46,12 @@ mojo_toolchain = rule(
             mandatory = True,
             cfg = "target",
             doc = "Implicit dependencies that every target should depend on, providing either CcInfo, or MojoInfo.",
+        ),
+        "runtime_deps": attr.label_list(
+            providers = [DefaultInfo],
+            mandatory = True,
+            cfg = "target",
+            doc = "Runtime dependencies that every target should depend on, providing DefaultInfo.",
         ),
     },
     doc = """\
