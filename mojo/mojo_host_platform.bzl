@@ -8,8 +8,13 @@ def _verbose_log(rctx, msg):
 def _log_result(rctx, binary, result):
     _verbose_log(
         rctx,
-        "\n------ {}:\nexit status: {}\nstdout: {}\nstderr: {}\n------ end gpu-query info"
-            .format(binary, result.return_code, result.stdout, result.stderr),
+        "\n------ {binary}:\nexit status: {exit_status}\nstdout: {stdout}\nstderr: {stderr}\n------ end {binary} info"
+            .format(
+            binary = binary,
+            exit_status = result.return_code,
+            stdout = result.stdout,
+            stderr = result.stderr,
+        ),
     )
 
 def _fail(rctx, msg):
