@@ -54,6 +54,34 @@ def _get_nvidia_constraint(rctx, lines, gpu_mapping):
     _fail(rctx, "Unrecognized nvidia-smi output, please add it to your gpu_mapping in the MODULE.bazel file: {}".format(lines))
     return None
 
+def _get_amd_constraints_with_rocm_smi(rctx, rocm_smi, gpu_mapping):
+    if not rocm_smi:
+        return []
+
+    result = rctx.execute([rocm_smi, "--json", "--showproductname"])
+    _log_result(rctx, rocm_smi, result)
+
+    constraints = []
+    if result.return_code == 0:
+        blob = json.decode(result.stdout)
+        if len(blob.keys()) == 0:
+            fail("rocm-smi succeeded but didn't actually have any GPUs, please report this issue")
+
+        rocm_constraint = _get_rocm_constraint(rctx, blob, gpu_mapping)
+        if rocm_constraint:
+            constraints.extend([
+                rocm_constraint,
+                "@mojo_gpu_toolchains//:amd_gpu",
+                "@mojo_gpu_toolchains//:has_gpu",
+            ])
+
+            if len(blob.keys()) > 1:
+                constraints.append("@mojo_gpu_toolchains//:has_multi_gpu")
+            if len(blob.keys()) >= 4:
+                constraints.append("@mojo_gpu_toolchains//:has_4_gpus")
+
+    return constraints
+
 def _impl(rctx):
     constraints = []
 
@@ -111,28 +139,12 @@ def _impl(rctx):
                         constraints.append("@mojo_gpu_toolchains//:has_multi_gpu")
                     if len(blob) >= 4:
                         constraints.append("@mojo_gpu_toolchains//:has_4_gpus")
+            else:
+                # amd-smi can fail when rocm-smi succeeds, fallback accordingly
+                constraints.extend(_get_amd_constraints_with_rocm_smi(rctx, rocm_smi, rctx.attr.gpu_mapping))
 
-        elif rocm_smi:
-            result = rctx.execute([rocm_smi, "--json", "--showproductname"])
-            _log_result(rctx, rocm_smi, result)
-
-            if result.return_code == 0:
-                blob = json.decode(result.stdout)
-                if len(blob.keys()) == 0:
-                    fail("rocm-smi succeeded but didn't actually have any GPUs, please report this issue")
-
-                rocm_constraint = _get_rocm_constraint(rctx, blob, rctx.attr.gpu_mapping)
-                if rocm_constraint:
-                    constraints.extend([
-                        rocm_constraint,
-                        "@mojo_gpu_toolchains//:amd_gpu",
-                        "@mojo_gpu_toolchains//:has_gpu",
-                    ])
-
-                    if len(blob.keys()) > 1:
-                        constraints.append("@mojo_gpu_toolchains//:has_multi_gpu")
-                    if len(blob.keys()) >= 4:
-                        constraints.append("@mojo_gpu_toolchains//:has_4_gpus")
+        else:
+            constraints.extend(_get_amd_constraints_with_rocm_smi(rctx, rocm_smi, rctx.attr.gpu_mapping))
 
     rctx.file("WORKSPACE.bazel", "workspace(name = {})".format(rctx.attr.name))
     rctx.file("BUILD.bazel", """
