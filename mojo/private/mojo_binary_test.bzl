@@ -8,6 +8,7 @@ load("@rules_python//python:py_info.bzl", "PyInfo")
 load("//mojo:providers.bzl", "MojoInfo")
 load(":utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo")
 
+_PYTHON_TOOLCHAIN_TYPE = "@rules_python//python:toolchain_type"
 _ATTRS = {
     "srcs": attr.label_list(
         allow_files = MOJO_EXTENSIONS,
@@ -30,7 +31,7 @@ _ATTRS = {
 
 _TOOLCHAINS = use_cpp_toolchain() + [
     "//:toolchain_type",
-    "@bazel_tools//tools/python:toolchain_type",
+    _PYTHON_TOOLCHAIN_TYPE,
 ]
 
 def _find_main(name, srcs, main):
@@ -61,7 +62,7 @@ def _find_main(name, srcs, main):
 def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     cc_toolchain = find_cpp_toolchain(ctx)
     mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
-    py_toolchain = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"]
+    py_toolchain = ctx.toolchains[_PYTHON_TOOLCHAIN_TYPE]
 
     object_file = ctx.actions.declare_file(ctx.label.name + ".lo")
     args = ctx.actions.args()
