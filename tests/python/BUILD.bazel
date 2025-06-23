@@ -1,4 +1,6 @@
 load("@rules_mojo_test_deps//:requirements.bzl", "requirement")
+load("@rules_python//python:defs.bzl", "py_test")
+load("//mojo:mojo_shared_library.bzl", "mojo_shared_library")
 load("//mojo:mojo_test.bzl", "mojo_test")
 
 mojo_test(
@@ -12,4 +14,16 @@ mojo_test(
     deps = [
         requirement("numpy"),
     ],
+)
+
+mojo_shared_library(
+    name = "python_shared_library",
+    srcs = ["python_shared_library.mojo"],
+    shared_lib_name = "python_shared_library.so",
+)
+
+py_test(
+    name = "python_shared_library_test",
+    srcs = ["python_shared_library_test.py"],
+    deps = [":python_shared_library"],
 )

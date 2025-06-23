@@ -32,3 +32,9 @@ pip.parse(
     requirements_lock = "tests/python/requirements.txt",
 )
 use_repo(pip, "rules_mojo_test_deps")
+
+link_hack = use_repo_rule("//mojo/private:link_hack.bzl", "link_hack")
+
+link_hack(
+    name = "build_bazel_rules_android",  # See link_hack.bzl for details
+)

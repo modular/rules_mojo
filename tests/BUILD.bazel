@@ -1,5 +1,6 @@
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("//mojo:mojo_binary.bzl", "mojo_binary")
+load("//mojo:mojo_shared_library.bzl", "mojo_shared_library")
 load("//mojo:mojo_test.bzl", "mojo_test")
 
 mojo_binary(
@@ -26,5 +27,22 @@ mojo_test(
     ],
     deps = [
         "//tests/package",
+    ],
+)
+
+mojo_shared_library(
+    name = "shared_library",
+    srcs = [
+        "shared_library.mojo",
+    ],
+)
+
+mojo_test(
+    name = "shared_library_test",
+    srcs = [
+        "shared_library_test.mojo",
+    ],
+    deps = [
+        ":shared_library",
     ],
 )

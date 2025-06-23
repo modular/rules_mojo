@@ -3,6 +3,7 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain", "use_cpp_toolchain")
+load("@build_bazel_rules_android//:link_hack.bzl", "link_hack")  # See link_hack.bzl for details
 load("@rules_python//python:py_info.bzl", "PyInfo")
 load("//mojo:providers.bzl", "MojoInfo")
 load(":utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo")
@@ -57,7 +58,7 @@ def _find_main(name, srcs, main):
 
     fail("Multiple Mojo files provided, but no main file specified. Please set 'main = \"foo.mojo\"' to disambiguate.")
 
-def _mojo_binary_test_implementation(ctx):
+def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     cc_toolchain = find_cpp_toolchain(ctx)
     mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
     py_toolchain = ctx.toolchains["@bazel_tools//tools/python:toolchain_type"]
@@ -132,12 +133,20 @@ def _mojo_binary_test_implementation(ctx):
             ]),
         )]),
     )
-    linking_outputs = cc_common.link(
+
+    link_kwargs = {}
+    if shared_library:
+        link_kwargs["output_type"] = "dynamic_library"
+        if ctx.attr.shared_lib_name:
+            link_kwargs["main_output"] = ctx.actions.declare_file(ctx.attr.shared_lib_name)  # Only set if name is not using the default logic
+
+    linking_outputs = link_hack(
         actions = ctx.actions,
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
         linking_contexts = [object_linking_context] + [dep[CcInfo].linking_context for dep in (ctx.attr.deps + mojo_toolchain.implicit_deps) if CcInfo in dep],
         name = ctx.label.name,
+        **link_kwargs
     )
 
     data = ctx.attr.data
@@ -150,6 +159,7 @@ def _mojo_binary_test_implementation(ctx):
 
     # Collect transitive shared libraries that must exist at runtime
     python_imports = []
+    transitive_libraries = []
     for target in ctx.attr.deps + mojo_toolchain.implicit_deps:
         transitive_runfiles.append(target[DefaultInfo].default_runfiles)
 
@@ -164,6 +174,7 @@ def _mojo_binary_test_implementation(ctx):
         for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
             for library in linker_input.libraries:
                 if library.dynamic_library and not library.pic_static_library and not library.static_library:
+                    transitive_libraries.append(depset([library]))
                     transitive_runfiles.append(ctx.runfiles(transitive_files = depset([library.dynamic_library])))
 
     python_path = ""
@@ -196,18 +207,43 @@ def _mojo_binary_test_implementation(ctx):
             {},
         )
 
-    return [
-        DefaultInfo(
-            executable = linking_outputs.executable,
-            runfiles = runfiles.merge_all(transitive_runfiles),
-        ),
-        RunEnvironmentInfo(
-            environment = runtime_env,
-        ),
-    ]
+    if shared_library:
+        return [
+            DefaultInfo(
+                executable = linking_outputs.library_to_link.resolved_symlink_dynamic_library,
+                runfiles = runfiles.merge_all(transitive_runfiles),
+            ),
+            PyInfo(
+                imports = depset(["_main/" + paths.dirname(linking_outputs.library_to_link.dynamic_library.short_path)]),
+                transitive_sources = depset([linking_outputs.library_to_link.dynamic_library]),
+            ),
+            CcInfo(
+                linking_context = cc_common.create_linking_context(
+                    linker_inputs = depset([
+                        cc_common.create_linker_input(
+                            owner = ctx.label,
+                            libraries = depset(
+                                [linking_outputs.library_to_link],
+                                transitive = transitive_libraries,
+                            ),
+                        ),
+                    ]),
+                ),
+            ),
+        ]
+    else:
+        return [
+            DefaultInfo(
+                executable = linking_outputs.executable,
+                runfiles = runfiles.merge_all(transitive_runfiles),
+            ),
+            RunEnvironmentInfo(
+                environment = runtime_env,
+            ),
+        ]
 
 mojo_binary = rule(
-    implementation = _mojo_binary_test_implementation,
+    implementation = lambda ctx: _mojo_binary_test_implementation(ctx),
     attrs = _ATTRS,
     toolchains = _TOOLCHAINS,
     fragments = ["cpp"],
@@ -215,9 +251,20 @@ mojo_binary = rule(
 )
 
 mojo_test = rule(
-    implementation = _mojo_binary_test_implementation,
+    implementation = lambda ctx: _mojo_binary_test_implementation(ctx),
     attrs = _ATTRS,
     toolchains = _TOOLCHAINS,
     fragments = ["cpp"],
     test = True,
+)
+
+mojo_shared_library = rule(
+    implementation = lambda ctx: _mojo_binary_test_implementation(ctx, shared_library = True),
+    attrs = _ATTRS | {
+        "shared_lib_name": attr.string(
+            doc = "The name of the shared library to be created.",
+        ),
+    },
+    toolchains = _TOOLCHAINS,
+    fragments = ["cpp"],
 )
