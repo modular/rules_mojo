@@ -22,6 +22,11 @@ _PLATFORM_MAPPINGS = {
     "linux_x86_64": "manylinux_2_34_x86_64",
     "macos_arm64": "macosx_13_0_arm64",
 }
+_NULL_SHAS = {
+    "linux_aarch64": "",
+    "linux_x86_64": "",
+    "macos_arm64": "",
+}
 
 def _mojo_toolchain_impl(rctx):
     rctx.download_and_extract(
@@ -29,7 +34,7 @@ def _mojo_toolchain_impl(rctx):
             rctx.attr.version,
             _PLATFORM_MAPPINGS[rctx.attr.platform],
         ),
-        sha256 = _KNOWN_SHAS.get(rctx.attr.version, {}).get(rctx.attr.platform, ""),
+        sha256 = _KNOWN_SHAS.get(rctx.attr.version, _NULL_SHAS)[rctx.attr.platform],
         type = "zip",
         strip_prefix = "max-{}.data/platlib/max".format(rctx.attr.version),
     )
