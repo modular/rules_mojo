@@ -11,7 +11,7 @@ def test_basic_numpy_example():
             Python.list(4, 5, 6)
         )
     )
-    assert_equal(array.shape, Python.tuple(2, 3))
+    assert_equal(String(array.shape), "(2, 3)")
 
 
 def main():
