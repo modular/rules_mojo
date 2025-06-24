@@ -18,20 +18,45 @@ register_toolchains("@mojo_toolchains//...", "@mojo_gpu_toolchains//...")
 
 _DEFAULT_PYTHON_VERSION = "3.12"
 
+_PYTHON_VERSIONS = [
+    "3.9",
+    "3.10",
+    "3.11",
+    "3.12",
+    "3.13",
+]
+
 python = use_extension("@rules_python//python/extensions:python.bzl", "python", dev_dependency = True)
-python.toolchain(
-    ignore_root_user_error = True,
-    is_default = True,
-    python_version = _DEFAULT_PYTHON_VERSION,
-)
+
+[
+    python.toolchain(
+        ignore_root_user_error = True,
+        is_default = version == _DEFAULT_PYTHON_VERSION,
+        python_version = version,
+    )
+    for version in _PYTHON_VERSIONS
+]
 
 pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip", dev_dependency = True)
-pip.parse(
-    hub_name = "rules_mojo_test_deps",
-    python_version = _DEFAULT_PYTHON_VERSION,
-    requirements_lock = "tests/python/requirements.txt",
-)
+
+[
+    pip.parse(
+        hub_name = "rules_mojo_test_deps",
+        python_version = version,
+        requirements_lock = "tests/python/requirements.txt",
+    )
+    for version in _PYTHON_VERSIONS
+]
+
 use_repo(pip, "rules_mojo_test_deps")
+
+versions = use_repo_rule("//tests:versions.bzl", "versions")
+
+versions(
+    name = "versions",
+    dev_dependency = True,
+    python_versions = _PYTHON_VERSIONS,
+)
 
 link_hack = use_repo_rule("//mojo/private:link_hack.bzl", "link_hack")
 

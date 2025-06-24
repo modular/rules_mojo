@@ -6,6 +6,7 @@ load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain", "use_c
 load("@build_bazel_rules_android//:link_hack.bzl", "link_hack")  # See link_hack.bzl for details
 load("@rules_python//python:py_info.bzl", "PyInfo")
 load("//mojo:providers.bzl", "MojoInfo")
+load(":transitions.bzl", "python_version_transition")
 load(":utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo")
 
 _PYTHON_TOOLCHAIN_TYPE = "@rules_python//python:toolchain_type"
@@ -24,6 +25,9 @@ _ATTRS = {
     "data": attr.label_list(allow_files = True),
     "enable_assertions": attr.bool(default = True),
     "env": attr.string_dict(),
+    "python_version": attr.string(
+        doc = "The version of Python to use for this target and all its dependencies.",
+    ),
     "_mojo_copts": attr.label(
         default = Label("//:mojo_copt"),
     ),
@@ -192,10 +196,12 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     if not libpython:
         fail("failed to find libpython, please report this at https://github.com/modular/rules_mojo/issues")
 
+    default_path = ctx.attr.env.get("PATH") or ctx.configuration.default_shell_env.get("PATH") or "/usr/bin:/bin:/usr/sbin"
     runtime_env = dict(ctx.attr.env) | {
         "MODULAR_PYTHON_EXECUTABLE": py_toolchain.py3_runtime.interpreter.short_path,
         "MOJO_PYTHON": py_toolchain.py3_runtime.interpreter.short_path,
         "MOJO_PYTHON_LIBRARY": libpython,
+        "PATH": paths.dirname(py_toolchain.py3_runtime.interpreter.short_path) + ":" + default_path,  # python < 3.11 doesn't set sys.executable correctly when Py_Initialize is called unless it's in the $PATH
         "PYTHONEXECUTABLE": py_toolchain.py3_runtime.interpreter.short_path,
         "PYTHONNOUSERSITE": "affirmative",
         "PYTHONPATH": python_path,
@@ -257,6 +263,7 @@ mojo_test = rule(
     toolchains = _TOOLCHAINS,
     fragments = ["cpp"],
     test = True,
+    cfg = python_version_transition,
 )
 
 mojo_shared_library = rule(

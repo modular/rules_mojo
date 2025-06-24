@@ -1,12 +1,18 @@
 load("@rules_mojo_test_deps//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_test")
+load("@versions//:config.bzl", "PYTHON_VERSIONS")
 load("//mojo:mojo_shared_library.bzl", "mojo_shared_library")
 load("//mojo:mojo_test.bzl", "mojo_test")
 
-mojo_test(
-    name = "basic_python_test",
-    srcs = ["basic_python_test.mojo"],
-)
+[
+    mojo_test(
+        name = "basic_python_test_py_" + version.replace(".", "_"),
+        srcs = ["basic_python_test.mojo"],
+        env = {"EXPECTED_PYTHON_VERSION": version},
+        python_version = version,
+    )
+    for version in PYTHON_VERSIONS
+]
 
 mojo_test(
     name = "deps_python_test",
