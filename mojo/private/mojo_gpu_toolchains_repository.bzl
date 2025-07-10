@@ -68,6 +68,11 @@ constraint_value(
 )
 
 constraint_value(
+    name = "apple_gpu",
+    constraint_setting = ":gpu_brand",
+)
+
+constraint_value(
     name = "nvidia_gpu",
     constraint_setting = ":gpu_brand",
 )
