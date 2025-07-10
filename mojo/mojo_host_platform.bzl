@@ -1,9 +1,8 @@
 """Setup a host platform that takes into account current GPU hardware"""
 
 def _verbose_log(rctx, msg):
-    if rctx.getenv("MOJO_VERBOSE_GPU_DETECT"):
-        # buildifier: disable=print
-        print(msg)
+    # buildifier: disable=print
+    print(msg)
 
 def _log_result(rctx, binary, result):
     _verbose_log(
@@ -92,8 +91,11 @@ def _get_apple_constraint(rctx, gpu_mapping):
     if result.return_code != 0:
         return None  # TODO: Should we fail instead?
 
+    _log_result(rctx, "system_profiler SPDisplaysDataType", result)
+
     chipset = None
     for line in result.stdout.splitlines():
+        print("lol", line)
         if "Chipset Model" in line:
             chipset = line
             break
