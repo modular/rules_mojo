@@ -100,6 +100,9 @@ def _get_apple_constraint(rctx, gpu_mapping):
             chipset = line
             break
 
+    if not chipset:
+        return None  # TODO: Should we fail instead?
+
     for gpu_name, constraint in gpu_mapping.items():
         if gpu_name in chipset:
             if constraint:
