@@ -30,4 +30,5 @@ jobs:
         run: |
           bazel version
           bazel info
+          system_profiler SPDisplaysDataType
       - run: bazel test //...
