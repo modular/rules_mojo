@@ -30,7 +30,4 @@ jobs:
         run: |
           bazel version
           bazel info
-          echo "---- before"
-          system_profiler SPDisplaysDataType
-          echo "---- after"
       - run: bazel test //...
