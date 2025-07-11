@@ -204,6 +204,7 @@ mojo_host_platform = repository_rule(
     implementation = _impl,
     configure = True,
     environ = [
+        "MOJO_ENABLE_HAS_GPU_FOR_APPLE",  # NOTE: Will likely be removed in the future
         "MOJO_IGNORE_UNKNOWN_GPUS",
         "MOJO_VERBOSE_GPU_DETECT",
     ],
