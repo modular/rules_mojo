@@ -103,51 +103,60 @@ _mojo_toolchain_hub = repository_rule(
     },
 )
 
-def _mojo_impl(mctx):
-    # TODO: This requires the root module always call mojo.toolchain(), we
-    # should improve this.
-    has_toolchains = False
-    for module in mctx.modules:
-        if not module.is_root:
-            continue
+def _setup_toolchains(root_module, rules_mojo_module):
+    print(root_module, rules_mojo_module)
+    toolchains = root_module.tags.toolchain or rules_mojo_module.tags.toolchain
+    if len(toolchains) > 1:
+        fail("mojo.toolchain() can only be called once per module.")
 
-        toolchains = module.tags.toolchain
-        if len(module.tags.toolchain) > 1:
-            fail("mojo.toolchain() can only be called once per module.")
-        if toolchains:
-            has_toolchains = True
-            tags = toolchains[0]
+    tags = toolchains[0]
+    for platform in _PLATFORMS:
+        name = "mojo_toolchain_{}".format(platform)
+        _mojo_toolchain_repository(
+            name = name,
+            version = tags.version,
+            platform = platform,
+            url_override = tags.url_override,
+            use_prebuilt_packages = tags.use_prebuilt_packages,
+        )
 
-            for platform in _PLATFORMS:
-                name = "mojo_toolchain_{}".format(platform)
-                _mojo_toolchain_repository(
-                    name = name,
-                    version = tags.version,
-                    platform = platform,
-                    url_override = tags.url_override,
-                    use_prebuilt_packages = tags.use_prebuilt_packages,
-                )
+    gpu_toolchains = root_module.tags.gpu_toolchains or rules_mojo_module.tags.gpu_toolchains
+    if len(gpu_toolchains) > 1:
+        fail("mojo.gpu_toolchain() can only be called once per module.")
+    gpu_toolchain = gpu_toolchains[0]
+    mojo_gpu_toolchains_repository(
+        name = "mojo_gpu_toolchains",
+        supported_gpus = gpu_toolchain.supported_gpus,
+    )
 
-        gpu_toolchains = module.tags.gpu_toolchains
-        if len(gpu_toolchains) > 1:
-            fail("mojo.gpu_toolchain() can only be called once per module.")
-        if gpu_toolchains:
-            gpu_toolchain = gpu_toolchains[0]
-            mojo_gpu_toolchains_repository(
-                name = "mojo_gpu_toolchains",
-                supported_gpus = gpu_toolchain.supported_gpus,
-            )
-
-            mojo_host_platform(
-                name = "mojo_host_platform",
-                gpu_mapping = gpu_toolchain.gpu_mapping,
-            )
+    mojo_host_platform(
+        name = "mojo_host_platform",
+        gpu_mapping = gpu_toolchain.gpu_mapping,
+    )
 
     _mojo_toolchain_hub(
         name = "mojo_toolchains",
-        platforms = _PLATFORMS if has_toolchains else [],
+        platforms = _PLATFORMS,
     )
 
+def _mojo_impl(mctx):
+    # TODO: This requires the root module always call mojo.toolchain(), we
+    # should improve this.
+    root_module = None
+    rules_mojo_module = None
+    for module in mctx.modules:
+        print(module.name, module.is_root, module.tags)
+        if module.is_root:
+            root_module = module
+        if module.name == "rules_mojo":
+            rules_mojo_module = module
+
+        if root_module and rules_mojo_module:
+            break
+
+    # If you don't have a module() definition there is no root module
+    root_module = root_module or rules_mojo_module
+    _setup_toolchains(root_module, rules_mojo_module)
     return mctx.extension_metadata(reproducible = True)
 
 _toolchain_tag = tag_class(
