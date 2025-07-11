@@ -46,5 +46,6 @@ mojo_toolchain(
     ] + ([":all_mojopkgs"] if "{INCLUDE_MOJOPKGS}" else []),
     lld = "bin/lld",
     mojo = "bin/mojo",
+    orc_rt = "lib/liborc_rt.a",
     visibility = ["//visibility:public"],
 )

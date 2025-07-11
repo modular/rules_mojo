@@ -16,6 +16,7 @@ MojoToolchainInfo = provider(
         "lld": "The lld compiler executable to link with",
         "mojo": "The mojo compiler executable to build with",
         "implicit_deps": "Implicit dependencies that every target should depend on, providing either CcInfo, or MojoInfo",
+        "orc_rt": "The ORC runtime library used for 'mojo run'.",
     },
 )
 
