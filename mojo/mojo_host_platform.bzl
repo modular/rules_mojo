@@ -1,8 +1,9 @@
 """Setup a host platform that takes into account current GPU hardware"""
 
 def _verbose_log(rctx, msg):
-    # buildifier: disable=print
-    print(msg)
+    if rctx.getenv("MOJO_VERBOSE_GPU_DETECT"):
+        # buildifier: disable=print
+        print(msg)
 
 def _log_result(rctx, binary, result):
     _verbose_log(
@@ -95,13 +96,12 @@ def _get_apple_constraint(rctx, gpu_mapping):
 
     chipset = None
     for line in result.stdout.splitlines():
-        print("lol", line)
         if "Chipset Model" in line:
             chipset = line
             break
 
-    if not chipset:
-        return None  # TODO: Should we fail instead?
+    if not chipset:  # macOS VMs may not have GPUs attached
+        return None
 
     for gpu_name, constraint in gpu_mapping.items():
         if gpu_name in chipset:
@@ -110,6 +110,7 @@ def _get_apple_constraint(rctx, gpu_mapping):
             else:
                 return None
 
+    _fail(rctx, "Unrecognized system_profiler output, please add it to your gpu_mapping in the MODULE.bazel file: {}".format(result.stdout))
     return None
 
 def _impl(rctx):
