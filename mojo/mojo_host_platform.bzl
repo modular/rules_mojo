@@ -88,11 +88,11 @@ def _get_amd_constraints_with_rocm_smi(rctx, rocm_smi, gpu_mapping):
     return constraints
 
 def _get_apple_constraint(rctx, gpu_mapping):
-    result = rctx.execute(["system_profiler", "SPDisplaysDataType"])
+    result = rctx.execute(["/usr/sbin/system_profiler", "SPDisplaysDataType"])
     if result.return_code != 0:
         return None  # TODO: Should we fail instead?
 
-    _log_result(rctx, "system_profiler SPDisplaysDataType", result)
+    _log_result(rctx, "/usr/sbin/system_profiler SPDisplaysDataType", result)
 
     chipset = None
     for line in result.stdout.splitlines():
