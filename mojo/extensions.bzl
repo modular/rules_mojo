@@ -104,7 +104,6 @@ _mojo_toolchain_hub = repository_rule(
 )
 
 def _setup_toolchains(root_module, rules_mojo_module):
-    print(root_module, rules_mojo_module)
     toolchains = root_module.tags.toolchain or rules_mojo_module.tags.toolchain
     if len(toolchains) > 1:
         fail("mojo.toolchain() can only be called once per module.")
@@ -145,7 +144,6 @@ def _mojo_impl(mctx):
     root_module = None
     rules_mojo_module = None
     for module in mctx.modules:
-        print(module.name, module.is_root, module.tags)
         if module.is_root:
             root_module = module
         if module.name == "rules_mojo":
