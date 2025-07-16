@@ -25,6 +25,9 @@ _ATTRS = {
     "data": attr.label_list(allow_files = True),
     "enable_assertions": attr.bool(default = True),
     "env": attr.string_dict(),
+    "linkopts": attr.string_list(
+        doc = "Additional options to pass to the linker.",
+    ),
     "python_version": attr.string(
         doc = "The version of Python to use for this target and all its dependencies.",
     ),
@@ -151,6 +154,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
         cc_toolchain = cc_toolchain,
         linking_contexts = [object_linking_context] + [dep[CcInfo].linking_context for dep in (ctx.attr.deps + mojo_toolchain.implicit_deps) if CcInfo in dep],
         name = ctx.label.name,
+        user_link_flags = ctx.attr.linkopts,
         **link_kwargs
     )
 
