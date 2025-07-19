@@ -31,6 +31,13 @@ _ATTRS = {
     "python_version": attr.string(
         doc = "The version of Python to use for this target and all its dependencies.",
     ),
+    "additional_compiler_inputs": attr.label_list(
+        allow_files = True,
+        doc = """\
+Additional files to pass to the compiler command line. Files specified here can
+then be used in copts with the $(location) function.
+""",
+    ),
     "_mojo_copts": attr.label(
         default = Label("//:mojo_copt"),
     ),
@@ -99,7 +106,10 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     # Ignore default mojo flags for exec built binaries
     if "-exec-" not in ctx.bin_dir.path:
         args.add_all(ctx.attr._mojo_copts[BuildSettingInfo].value)
-    args.add_all(ctx.attr.copts)
+    args.add_all([
+        ctx.expand_location(copt, targets = ctx.attr.additional_compiler_inputs)
+        for copt in ctx.attr.copts
+    ])
     if ctx.attr.enable_assertions:
         args.add("-D", "ASSERT=all")
 
