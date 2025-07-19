@@ -116,7 +116,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     ctx.actions.run(
         executable = mojo_toolchain.mojo,
         tools = mojo_toolchain.all_tools,
-        inputs = depset(ctx.files.srcs, transitive = [transitive_mojopkgs]),
+        inputs = depset(ctx.files.srcs + ctx.files.additional_compiler_inputs, transitive = [transitive_mojopkgs]),
         outputs = [object_file],
         arguments = [args],
         mnemonic = "MojoCompile",
