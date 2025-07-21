@@ -23,7 +23,6 @@ def _mojo_toolchain_impl(ctx):
                 lld = ctx.executable.lld,
                 mojo = ctx.executable.mojo,
                 implicit_deps = ctx.attr.implicit_deps,
-                orc_rt = ctx.file.orc_rt,
             ),
         ),
     ]
@@ -61,12 +60,6 @@ mojo_toolchain = rule(
             mandatory = True,
             cfg = "target",
             doc = "Implicit dependencies that every target should depend on, providing either CcInfo, or MojoInfo.",
-        ),
-        "orc_rt": attr.label(
-            allow_single_file = True,
-            mandatory = True,
-            cfg = "target",
-            doc = "The ORC runtime library used for 'mojo run'.",
         ),
     },
     doc = """\
