@@ -3,6 +3,9 @@
 load("//mojo:providers.bzl", "MojoInfo")
 load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo")
 
+def _format_include(arg):
+    return ["-I", arg.dirname]
+
 def _mojo_library_implementation(ctx):
     mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
 
@@ -10,7 +13,7 @@ def _mojo_library_implementation(ctx):
     args = ctx.actions.args()
     args.add("package")
     args.add("-strip-file-prefix=.")
-    args.add("-o", mojo_package.path)
+    args.add("-o", mojo_package)
     args.add_all(ctx.attr.copts)
 
     import_paths, transitive_mojopkgs = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
@@ -19,9 +22,9 @@ def _mojo_library_implementation(ctx):
     file_args = ctx.actions.args()
     for file in ctx.files.srcs:
         if not file.dirname.startswith(root_directory):
-            file_args.add("-I", file.dirname)
+            args.add_all([file], map_each = _format_include)
 
-    file_args.add_all(import_paths, before_each = "-I")
+    file_args.add_all(transitive_mojopkgs, map_each = _format_include)
     file_args.add(root_directory)
     ctx.actions.run(
         executable = mojo_toolchain.mojo,
@@ -37,6 +40,9 @@ def _mojo_library_implementation(ctx):
         },
         use_default_shell_env = True,
         toolchain = "//:toolchain_type",
+        execution_requirements = {
+            "supports-path-mapping": "1",
+        },
     )
 
     transitive_runfiles = []
