@@ -14,7 +14,10 @@ def _mojo_library_implementation(ctx):
     args.add("package")
     args.add("-strip-file-prefix=.")
     args.add("-o", mojo_package)
-    args.add_all(ctx.attr.copts)
+    args.add_all([
+        ctx.expand_location(copt, targets = ctx.attr.additional_compiler_inputs)
+        for copt in ctx.attr.copts
+    ])
 
     import_paths, transitive_mojopkgs = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
     root_directory = ctx.files.srcs[0].dirname
@@ -28,7 +31,7 @@ def _mojo_library_implementation(ctx):
     file_args.add(root_directory)
     ctx.actions.run(
         executable = mojo_toolchain.mojo,
-        inputs = depset(ctx.files.srcs, transitive = [transitive_mojopkgs]),
+        inputs = depset(ctx.files.srcs + ctx.files.additional_compiler_inputs, transitive = [transitive_mojopkgs]),
         tools = mojo_toolchain.all_tools,
         outputs = [mojo_package],
         arguments = [args, file_args],
@@ -63,6 +66,13 @@ def _mojo_library_implementation(ctx):
 mojo_library = rule(
     implementation = _mojo_library_implementation,
     attrs = {
+        "additional_compiler_inputs": attr.label_list(
+            allow_files = True,
+            doc = """\
+Additional files to pass to the compiler command line. Files specified here can
+then be used in copts with the $(location) function.
+""",
+        ),
         "copts": attr.string_list(
             doc = """\
 Additional compiler options to pass to the Mojo compiler.
