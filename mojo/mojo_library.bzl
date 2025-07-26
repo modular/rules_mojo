@@ -43,13 +43,10 @@ def _mojo_library_implementation(ctx):
         },
         use_default_shell_env = True,
         toolchain = "//:toolchain_type",
-        execution_requirements = {
-            "supports-path-mapping": "1",
-        },
     )
 
     transitive_runfiles = []
-    for target in ctx.attr.data:
+    for target in ctx.attr.data + ctx.attr.deps:
         transitive_runfiles.append(target[DefaultInfo].default_runfiles)
 
     return [
