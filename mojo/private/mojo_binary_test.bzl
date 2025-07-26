@@ -73,6 +73,9 @@ def _find_main(name, srcs, main):
 
     fail("Multiple Mojo files provided, but no main file specified. Please set 'main = \"foo.mojo\"' to disambiguate.")
 
+def _format_include(arg):
+    return ["-I", arg.dirname]
+
 def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     cc_toolchain = find_cpp_toolchain(ctx)
     mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
@@ -83,17 +86,17 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     args.add("build")
     args.add("-strip-file-prefix=.")
     args.add("--emit", "object")
-    args.add("-o", object_file.path)
+    args.add("-o", object_file)
 
     main = _find_main(ctx.label.name, ctx.files.srcs, ctx.file.main)
     args.add(main.path)
     root_directory = main.dirname
     for file in ctx.files.srcs:
         if not file.dirname.startswith(root_directory):
-            args.add("-I", file.dirname)
+            args.add_all([file], map_each = _format_include)
 
-    import_paths, transitive_mojopkgs = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
-    args.add_all(import_paths, before_each = "-I")
+    _, transitive_mojopkgs = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
+    args.add_all(transitive_mojopkgs, map_each = _format_include)
 
     # NOTE: Argument order:
     # 1. Basic functional arguments
@@ -126,10 +129,14 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
             "MODULAR_MOJO_MAX_COMPILERRT_PATH": "/dev/null",  # Make sure this fails if accessed
             "MODULAR_MOJO_MAX_LINKER_DRIVER": "/dev/null",  # Make sure this fails if accessed
             "MODULAR_MOJO_MAX_LLD_PATH": mojo_toolchain.lld.path,
+            # "MODULAR_MOJO_MAX_LLD_PATH": "/dev/null",  # Make sure this fails if accessed
             "TEST_TMPDIR": ".",
         },
         use_default_shell_env = True,
         toolchain = "//:toolchain_type",
+        execution_requirements = {
+            "supports-path-mapping": "1",
+        },
     )
 
     feature_configuration = cc_common.configure_features(
