@@ -126,6 +126,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
             "MODULAR_MOJO_MAX_COMPILERRT_PATH": "/dev/null",  # Make sure this fails if accessed
             "MODULAR_MOJO_MAX_LINKER_DRIVER": "/dev/null",  # Make sure this fails if accessed
             "MODULAR_MOJO_MAX_LLD_PATH": mojo_toolchain.lld.path,
+            "PATH": "/dev/null",  # Avoid using the host's PATH
             "TEST_TMPDIR": ".",
         },
         use_default_shell_env = True,
