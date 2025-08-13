@@ -30,13 +30,13 @@ _NULL_SHAS = {
 
 def _mojo_toolchain_impl(rctx):
     rctx.download_and_extract(
-        url = rctx.attr.url_override or "https://dl.modular.com/public/nightly/python/max-{}-py3-none-{}.whl".format(
+        url = rctx.attr.url_override or "https://dl.modular.com/public/nightly/python/mojo_compiler-{}-py3-none-{}.whl".format(
             rctx.attr.version,
             _PLATFORM_MAPPINGS[rctx.attr.platform],
         ),
         sha256 = _KNOWN_SHAS.get(rctx.attr.version, _NULL_SHAS)[rctx.attr.platform],
         type = "zip",
-        strip_prefix = "max-{}.data/platlib/max".format(rctx.attr.version),
+        strip_prefix = "mojo_compiler-{}.data/platlib/modular".format(rctx.attr.version),
     )
 
     rctx.template(
