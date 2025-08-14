@@ -17,6 +17,9 @@ _INTERNAL_LIBRARIES = [
             "lib/libMSupportGlobals.*",
         ],
         allow_empty = False,
+    ) + glob(
+        ["lib/libNVPTX.so"],  # buildifier: disable=constant-glob
+        allow_empty = True,
     )
 ]
 
