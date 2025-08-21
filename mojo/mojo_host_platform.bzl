@@ -42,8 +42,10 @@ def _get_rocm_constraint(rctx, blob, gpu_mapping):
     fail("Unrecognized rocm-smi output, please report: {}".format(blob))
 
 def _get_amd_constraint(rctx, blob, gpu_mapping):
+    if "gpu_data" in blob:
+        blob = blob["gpu_data"]
     for value in blob:
-        series = value["asic"]["market_name"]
+        series = value["board"]["product_name"]
         return _get_amdgpu_constraint(rctx, series, gpu_mapping)
     fail("Unrecognized amd-smi output, please report: {}".format(blob))
 
