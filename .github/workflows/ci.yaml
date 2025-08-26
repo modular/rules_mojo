@@ -17,17 +17,21 @@ jobs:
           - macos-15
           - ubuntu-latest
         bazel:
-          - latest
-          - last_rc
-          - last_green
+          - version: latest
+            extra_info_flags: ""
+          - version: last_rc
+            extra_info_flags: ""
+          - version: last_green
+            # https://github.com/bazelbuild/bazel/issues/25145
+            extra_info_flags: "--noincompatible_target_cpu_from_platform"
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
-      USE_BAZEL_VERSION: ${{ matrix.bazel }}
+      USE_BAZEL_VERSION: ${{ matrix.bazel.version }}
     steps:
       - uses: actions/checkout@v4
       - name: Bazel Info
         run: |
           bazel version
-          bazel info
+          bazel ${{ matrix.bazel.extra_info_flags }} info
       - run: bazel test //...

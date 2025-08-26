@@ -3,7 +3,6 @@ common --test_output=errors
 
 # https://github.com/bazelbuild/bazel/issues/25145
 info --platforms=
-info --incompatible_target_cpu_from_platform=false
 
 common --platforms=@mojo_host_platform
 common --host_platform=@mojo_host_platform
