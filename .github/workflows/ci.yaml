@@ -33,5 +33,5 @@ jobs:
       - name: Bazel Info
         run: |
           bazel version
-          bazel ${{ matrix.bazel.extra_info_flags }} info
+          bazel info ${{ matrix.bazel.extra_info_flags }}
       - run: bazel test //...
