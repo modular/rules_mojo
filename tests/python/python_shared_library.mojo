@@ -25,6 +25,7 @@ fn PyInit_python_shared_library() -> PythonObject:
 
 @export
 fn mojo_count_args(py_self: PyObjectPtr, args: PyObjectPtr) -> PyObjectPtr:
-    var cpython = Python().cpython()
+    ref cpython = Python().cpython()
 
-    return PythonObject(cpython.PyObject_Length(args)).py_object
+    var count = cpython.PyObject_Length(args)
+    return cpython.PyLong_FromSsize_t(count)

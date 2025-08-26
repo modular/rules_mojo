@@ -14,9 +14,9 @@ fi
 readonly version=$1
 directory=$(mktemp -d)
 
-curl --location --fail --output "$directory/linux_x86_64" "https://dl.modular.com/public/nightly/python/max-$version-py3-none-manylinux_2_34_x86_64.whl"
-curl --location --fail --output "$directory/linux_aarch64" "https://dl.modular.com/public/nightly/python/max-$version-py3-none-manylinux_2_34_aarch64.whl"
-curl --location --fail --output "$directory/macos" "https://dl.modular.com/public/nightly/python/max-$version-py3-none-macosx_13_0_arm64.whl"
+curl --location --fail --output "$directory/linux_x86_64" "https://dl.modular.com/public/nightly/python/mojo_compiler-$version-py3-none-manylinux_2_34_x86_64.whl"
+curl --location --fail --output "$directory/linux_aarch64" "https://dl.modular.com/public/nightly/python/mojo_compiler-$version-py3-none-manylinux_2_34_aarch64.whl"
+curl --location --fail --output "$directory/macos" "https://dl.modular.com/public/nightly/python/mojo_compiler-$version-py3-none-macosx_13_0_arm64.whl"
 
 cat <<EOF
 "$version": {
