@@ -26,6 +26,7 @@ jobs:
             extra_info_flags: "--noincompatible_target_cpu_from_platform"
       fail-fast: false
     runs-on: ${{ matrix.os }}
+    name: test (${{ matrix.os }}, ${{ matrix.bazel.version }})
     env:
       USE_BAZEL_VERSION: ${{ matrix.bazel.version }}
     steps:
