@@ -86,6 +86,10 @@ toolchain(
         "@platforms//cpu:{cpu}",
         "@platforms//os:{os}",
     ],
+    target_compatible_with = [  # Wheels only contain support libraries for 1 platform and cross OS compilation is not supported.
+        "@platforms//cpu:{cpu}",
+        "@platforms//os:{os}",
+    ],
     toolchain = "@mojo_toolchain_{platform}//:mojo_toolchain",
     toolchain_type = "@rules_mojo//:toolchain_type",
 )
