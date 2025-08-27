@@ -156,7 +156,13 @@ def _impl(rctx):
             _log_result(rctx, amd_smi, result)
 
             if result.return_code == 0:
-                blob = json.decode(result.stdout)
+                # amd-smi outputs warnings to stdout, filter them out
+                json_lines = []
+                for line in result.stdout.splitlines():
+                    if line.starswith("WARNING:"):
+                        continue
+                    json_lines.append(line)
+                blob = json.decode("\n".join(json_lines))
                 if len(blob) == 0:
                     fail("amd-smi succeeded but didn't actually have any GPUs, please report this issue")
 
