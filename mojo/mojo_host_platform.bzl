@@ -159,7 +159,7 @@ def _impl(rctx):
                 # amd-smi outputs warnings to stdout, filter them out
                 json_lines = []
                 for line in result.stdout.splitlines():
-                    if line.starswith("WARNING:"):
+                    if line.startswith("WARNING:"):
                         continue
                     json_lines.append(line)
                 blob = json.decode("\n".join(json_lines))
