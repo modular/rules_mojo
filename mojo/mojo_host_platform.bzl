@@ -162,7 +162,10 @@ def _impl(rctx):
                     if line.startswith("WARNING:"):
                         continue
                     json_lines.append(line)
-                blob = json.decode("\n".join(json_lines))
+                failure_sentinel = {"DECODE": "FAILED"}
+                blob = json.decode("\n".join(json_lines), default = failure_sentinel)
+                if blob == failure_sentinel:
+                    fail("amd-smi output was not valid json, please report this issue: {}".format(result.stdout))
                 if len(blob) == 0:
                     fail("amd-smi succeeded but didn't actually have any GPUs, please report this issue")
 
