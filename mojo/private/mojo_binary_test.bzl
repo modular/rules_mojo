@@ -44,9 +44,12 @@ then be used in copts with the $(location) function.
 }
 
 _TOOLCHAINS = use_cpp_toolchain() + [
-    "//:toolchain_type",
     _PYTHON_TOOLCHAIN_TYPE,
 ]
+
+_EXEC_GROUPS = {
+    "compile": exec_group(toolchains = ["//:toolchain_type"]),
+}
 
 def _find_main(name, srcs, main):
     """Finds the main source file from the list of srcs and the main attribute."""
@@ -75,7 +78,7 @@ def _find_main(name, srcs, main):
 
 def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     cc_toolchain = find_cpp_toolchain(ctx)
-    mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
+    mojo_toolchain = ctx.exec_groups["compile"].toolchains["//:toolchain_type"].mojo_toolchain_info
     py_toolchain = ctx.toolchains[_PYTHON_TOOLCHAIN_TYPE]
 
     object_file = ctx.actions.declare_file(ctx.label.name + ".lo")
@@ -130,6 +133,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
             "TEST_TMPDIR": ".",
         },
         use_default_shell_env = True,
+        exec_group = "compile",
         toolchain = "//:toolchain_type",
     )
 
@@ -266,6 +270,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
 mojo_binary = rule(
     implementation = lambda ctx: _mojo_binary_test_implementation(ctx),
     attrs = _ATTRS,
+    exec_groups = _EXEC_GROUPS,
     toolchains = _TOOLCHAINS,
     fragments = ["cpp"],
     executable = True,
@@ -274,6 +279,7 @@ mojo_binary = rule(
 mojo_test = rule(
     implementation = lambda ctx: _mojo_binary_test_implementation(ctx),
     attrs = _ATTRS,
+    exec_groups = _EXEC_GROUPS,
     toolchains = _TOOLCHAINS,
     fragments = ["cpp"],
     test = True,
@@ -287,6 +293,7 @@ mojo_shared_library = rule(
             doc = "The name of the shared library to be created.",
         ),
     },
+    exec_groups = _EXEC_GROUPS,
     toolchains = _TOOLCHAINS,
     fragments = ["cpp"],
 )
