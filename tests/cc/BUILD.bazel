@@ -1,3 +1,5 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_import.bzl", "cc_import")
 load("//mojo:mojo_test.bzl", "mojo_test")
 
 mojo_test(
