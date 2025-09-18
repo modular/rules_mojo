@@ -41,6 +41,15 @@ then be used in copts with the $(location) function.
     "_mojo_copts": attr.label(
         default = Label("//:mojo_copt"),
     ),
+    "_link_extra_lib": attr.label(
+        default = "@bazel_tools//tools/cpp:link_extra_lib",
+        providers = [CcInfo],
+        doc = """\
+Pull in extra libraries passed with @bazel_tools//tools/cpp:link_extra_lib.
+This is useful for shared sanitizer libraries which need to have rpaths added
+by bazel.
+""",
+    ),
 }
 
 _TOOLCHAINS = use_cpp_toolchain() + [
@@ -95,7 +104,8 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
         if not file.dirname.startswith(root_directory):
             args.add("-I", file.dirname)
 
-    import_paths, transitive_mojopkgs = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
+    all_deps = ctx.attr.deps + mojo_toolchain.implicit_deps + ([ctx.attr._link_extra_lib] if ctx.attr._link_extra_lib else [])
+    import_paths, transitive_mojopkgs = collect_mojoinfo(all_deps)
     args.add_all(import_paths, before_each = "-I")
 
     # NOTE: Argument order:
@@ -166,7 +176,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
         actions = ctx.actions,
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
-        linking_contexts = [object_linking_context] + [dep[CcInfo].linking_context for dep in (ctx.attr.deps + mojo_toolchain.implicit_deps) if CcInfo in dep],
+        linking_contexts = [object_linking_context] + [dep[CcInfo].linking_context for dep in all_deps if CcInfo in dep],
         name = ctx.label.name,
         user_link_flags = ctx.attr.linkopts,
         **link_kwargs
@@ -183,7 +193,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     # Collect transitive shared libraries that must exist at runtime
     python_imports = []
     transitive_libraries = []
-    for target in ctx.attr.deps + mojo_toolchain.implicit_deps:
+    for target in all_deps:
         transitive_runfiles.append(target[DefaultInfo].default_runfiles)
 
         if PyInfo in target:
