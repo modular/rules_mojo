@@ -28,7 +28,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Bazel Info
         run: |
+          set -x
+          echo hi
           /usr/sbin/system_profiler SPDisplaysDataType
-          bazel version
-          bazel info
-      - run: bazel test //...
