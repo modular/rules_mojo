@@ -1,6 +1,6 @@
 """Helpers internal to rules_mojo."""
 
-load("//mojo:providers.bzl", "MojoInfo", "MojoToolchainInfo")
+load("//mojo:providers.bzl", "MojoInfo")
 
 MOJO_EXTENSIONS = ("mojo", "🔥")
 

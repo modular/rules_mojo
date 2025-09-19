@@ -1,5 +1,6 @@
 """The Mojo compiler toolchain."""
 
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//mojo:providers.bzl", "MojoInfo", "MojoToolchainInfo")
 
 def _mojo_toolchain_impl(ctx):
