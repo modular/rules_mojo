@@ -42,8 +42,6 @@ def _get_rocm_constraint(rctx, blob, gpu_mapping):
     fail("Unrecognized rocm-smi output, please report: {}".format(blob))
 
 def _get_amd_constraint(rctx, blob, gpu_mapping):
-    if "gpu_data" in blob:
-        blob = blob["gpu_data"]
     for value in blob:
         series = value["board"]["product_name"]
         return _get_amdgpu_constraint(rctx, series, gpu_mapping)
@@ -166,6 +164,9 @@ def _impl(rctx):
                 blob = json.decode("\n".join(json_lines), default = failure_sentinel)
                 if blob == failure_sentinel:
                     fail("amd-smi output was not valid json, please report this issue: {}".format(result.stdout))
+
+                if "gpu_data" in blob:
+                    blob = blob["gpu_data"]
                 if len(blob) == 0:
                     fail("amd-smi succeeded but didn't actually have any GPUs, please report this issue")
 
