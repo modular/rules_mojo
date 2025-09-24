@@ -94,17 +94,17 @@ def _get_apple_constraint(rctx, gpu_mapping):
 
     _log_result(rctx, "/usr/sbin/system_profiler SPDisplaysDataType", result)
 
-    chipset = None
+    metal_version = None
     for line in result.stdout.splitlines():
-        if "Chipset Model" in line:
-            chipset = line
+        if "Metal Support:" in line:
+            metal_version = line
             break
 
-    if not chipset:  # macOS VMs may not have GPUs attached
+    if not metal_version:  # macOS VMs may not have GPUs attached
         return None
 
     for gpu_name, constraint in gpu_mapping.items():
-        if gpu_name in chipset:
+        if gpu_name in metal_version:
             if constraint:
                 return "@mojo_gpu_toolchains//:{}_gpu".format(constraint)
             else:
