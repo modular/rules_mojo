@@ -19,7 +19,6 @@ register_toolchains("@mojo_toolchains//...", "@mojo_gpu_toolchains//...")
 _DEFAULT_PYTHON_VERSION = "3.12"
 
 _PYTHON_VERSIONS = [
-    "3.9",
     "3.10",
     "3.11",
     "3.12",
