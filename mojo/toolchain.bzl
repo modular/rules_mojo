@@ -16,6 +16,12 @@ def _mojo_toolchain_impl(ctx):
     else:
         copts.append("--target-accelerator=NONE")
 
+    is_macos = ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo])
+    if is_macos:
+        min_os = ctx.fragments.cpp.minimum_os_version() or ctx.fragments.apple.macos_minimum_os_flag
+        if min_os:
+            copts.append("--target-triple=arm64-apple-macosx{}".format(min_os))
+
     return [
         platform_common.ToolchainInfo(
             mojo_toolchain_info = MojoToolchainInfo(
@@ -62,6 +68,9 @@ mojo_toolchain = rule(
             cfg = "target",
             doc = "Implicit dependencies that every target should depend on, providing either CcInfo, or MojoInfo.",
         ),
+        "_macos_constraint": attr.label(
+            default = Label("@platforms//os:macos"),
+        ),
     },
     doc = """\
 Defines the Mojo compiler toolchain.
@@ -69,4 +78,5 @@ Defines the Mojo compiler toolchain.
     toolchains = [
         config_common.toolchain_type("//:gpu_toolchain_type", mandatory = False),
     ],
+    fragments = ["cpp", "apple"],
 )
