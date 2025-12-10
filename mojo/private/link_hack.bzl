@@ -6,6 +6,8 @@ https://github.com/bazelbuild/bazel/pull/23838
 def _link_hack_impl(rctx):
     rctx.file("BUILD.bazel", "")
     rctx.file("link_hack.bzl", """\
+load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
+
 def link_hack(**kwargs):
     return cc_common.link(**kwargs)
 """)

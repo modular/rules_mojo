@@ -17,6 +17,7 @@ jobs:
           - macos-15
           - ubuntu-latest
         bazel:
+          - 8.x
           - latest
           - last_rc
           - last_green
