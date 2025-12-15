@@ -88,6 +88,14 @@ def _get_amd_constraints_with_rocm_smi(rctx, rocm_smi, gpu_mapping):
     return constraints
 
 def _get_apple_constraint(rctx, gpu_mapping):
+    result = rctx.execute(["/usr/bin/sw_vers", "--productVersion"])
+    _log_result(rctx, "/usr/sbin/sw_vers --productVersion", result)
+    if result.return_code != 0:
+        fail("sw_vers failed, please report this issue: {}".format(result.stderr))
+    major_version = int(result.stdout.split(".")[0])
+    if major_version < 15:
+        return None  # Metal < 3.2 is not supported
+
     result = rctx.execute(["/usr/sbin/system_profiler", "SPDisplaysDataType"])
     if result.return_code != 0:
         return None  # TODO: Should we fail instead?
