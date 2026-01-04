@@ -67,7 +67,7 @@ def _get_amd_constraints_with_rocm_smi(rctx, rocm_smi, gpu_mapping):
     _log_result(rctx, rocm_smi, result)
 
     constraints = []
-    if result.return_code == 0:
+    if result.return_code == 0 and len(result.stdout) > 0: #len(result.stdout) == 0 when the driver is not initialized
         blob = json.decode(result.stdout)
         if len(blob.keys()) == 0:
             fail("rocm-smi succeeded but didn't actually have any GPUs, please report this issue")
