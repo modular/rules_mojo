@@ -6,6 +6,12 @@ repeatable_string_flag(
     visibility = ["//visibility:public"],
 )
 
+repeatable_string_flag(
+    name = "mojo_package_copt",
+    build_setting_default = [],
+    visibility = ["//visibility:public"],
+)
+
 toolchain_type(
     name = "toolchain_type",
     visibility = ["//visibility:public"],
