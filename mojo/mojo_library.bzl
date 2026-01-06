@@ -1,5 +1,6 @@
 """Compile Mojo files into a mojopkg that can be consumed by other Mojo targets."""
 
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//mojo:providers.bzl", "MojoInfo")
 load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo")
 
@@ -14,6 +15,10 @@ def _mojo_library_implementation(ctx):
     args.add("package")
     args.add("-strip-file-prefix=.")
     args.add("-o", mojo_package)
+
+    args.add_all(mojo_toolchain.package_copts)
+    if "-exec-" not in ctx.bin_dir.path:
+        args.add_all(ctx.attr._mojo_package_copts[BuildSettingInfo].value)
     args.add_all([
         ctx.expand_location(copt, targets = ctx.attr.additional_compiler_inputs)
         for copt in ctx.attr.copts
@@ -78,6 +83,12 @@ then be used in copts with the $(location) function.
             doc = """\
 Additional compiler options to pass to the Mojo compiler.
 
+Order of options:
+1. copts from mojo_toolchain.package_copts
+2. copts from //:mojo_package_copt (if not building in exec config)
+3. copts from this attribute, with $(location) expanded for files in
+   additional_compiler_inputs.
+
 NOTE: copts from --mojocopt and mojo_toolchain.copts are not passed to 'mojo
 package' since it does not accept many flags.
 """,
@@ -90,6 +101,9 @@ package' since it does not accept many flags.
             providers = [MojoInfo],
         ),
         "data": attr.label_list(),
+        "_mojo_package_copts": attr.label(
+            default = Label("//:mojo_package_copt"),
+        ),
     },
     toolchains = ["//:toolchain_type"],
 )

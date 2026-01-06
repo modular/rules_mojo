@@ -27,6 +27,7 @@ def _mojo_toolchain_impl(ctx):
             mojo_toolchain_info = MojoToolchainInfo(
                 all_tools = tool_files,
                 copts = copts,
+                package_copts = ctx.attr.package_copts,
                 lld = ctx.executable.lld,
                 mojo = ctx.executable.mojo,
                 implicit_deps = ctx.attr.implicit_deps,
@@ -40,6 +41,10 @@ mojo_toolchain = rule(
         "copts": attr.string_list(
             mandatory = False,
             doc = "Additional compiler options to pass to the Mojo compiler.",
+        ),
+        "package_copts": attr.string_list(
+            mandatory = False,
+            doc = "Additional compiler options to pass to the Mojo compiler when running 'mojo package'.",
         ),
         "extra_tools": attr.label_list(
             providers = [DefaultInfo],
