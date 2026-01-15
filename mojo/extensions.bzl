@@ -4,12 +4,12 @@ load("//mojo:mojo_host_platform.bzl", "mojo_host_platform")
 load("//mojo/private:mojo_gpu_toolchains_repository.bzl", "mojo_gpu_toolchains_repository")
 
 _PLATFORMS = ["linux_aarch64", "linux_x86_64", "macos_arm64"]
-_DEFAULT_VERSION = "0.25.7.0.dev2025101005"
+_DEFAULT_VERSION = "0.26.1.0.dev2026011405"
 _KNOWN_SHAS = {
-    "0.25.7.0.dev2025101005": {
-        "linux_aarch64": "ea10104453b8fe04398afaf78815f988bb12f824e1876ebbc16c3ef893d7568b",
-        "linux_x86_64": "5769a8930c9dddc621ba3da2ac088dd892bcc63fec0aa5f1645aa9c905247019",
-        "macos_arm64": "864e63f4a07af8387837e6c3f130d60fa1bc5ab66e5fc4815751ec25ebd37510",
+    "0.26.1.0.dev2026011405": {
+        "linux_aarch64": "f365b74545234d891f76db0395dfcfc41eb4591a611d361251738ba197d8281b",
+        "linux_x86_64": "4f0f0aa0eb6c815cd081c76a8218865a3d22d0a33fa502245d41e1a6ad836a15",
+        "macos_arm64": "0ea255379d009779e6a3ccda7039146f33cdd15324c3e97d659a6fb1644f2519",
     },
 }
 _PLATFORM_MAPPINGS = {
@@ -24,7 +24,7 @@ _NULL_SHAS = {
 }
 
 def _mojo_toolchain_impl(rctx):
-    base_url = rctx.attr.base_url or "https://dl.modular.com/public/nightly/python"
+    base_url = rctx.attr.base_url or "https://whl.modular.com/nightly/mojo-compiler"
     rctx.download_and_extract(
         url = "{}/mojo_compiler-{}-py3-none-{}.whl".format(
             base_url,
