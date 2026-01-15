@@ -3,11 +3,11 @@
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain", "use_cpp_toolchain")
-load("@build_bazel_rules_android//:link_hack.bzl", "link_hack")  # See link_hack.bzl for details
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_python//python:py_info.bzl", "PyInfo")
 load("//mojo:providers.bzl", "MojoInfo")
+load("//tools/build_defs/android:link_hack.bzl", "link_hack")  # See link_hack.bzl for details
 load(":transitions.bzl", "python_version_transition")
 load(":utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo")
 
