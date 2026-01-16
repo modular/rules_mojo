@@ -59,7 +59,7 @@ _TOOLCHAINS = use_cpp_toolchain() + [
 ]
 
 _EXEC_GROUPS = {
-    "compile": exec_group(toolchains = ["//:toolchain_type"]),
+    "mojo_compile": exec_group(toolchains = ["//:toolchain_type"]),
 }
 
 def _find_main(name, srcs, main):
@@ -89,7 +89,7 @@ def _find_main(name, srcs, main):
 
 def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     cc_toolchain = find_cpp_toolchain(ctx)
-    mojo_toolchain = ctx.exec_groups["compile"].toolchains["//:toolchain_type"].mojo_toolchain_info
+    mojo_toolchain = ctx.exec_groups["mojo_compile"].toolchains["//:toolchain_type"].mojo_toolchain_info
     py_toolchain = ctx.toolchains[_PYTHON_TOOLCHAIN_TYPE]
 
     object_file = ctx.actions.declare_file(ctx.label.name + ".lo")
@@ -145,7 +145,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
             "TEST_TMPDIR": ".",
         },
         use_default_shell_env = True,
-        exec_group = "compile",
+        exec_group = "mojo_compile",
         toolchain = "//:toolchain_type",
     )
 
