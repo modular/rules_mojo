@@ -6,8 +6,18 @@ module(
 
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "platforms", version = "0.0.11")
-bazel_dep(name = "rules_cc", version = "0.1.1")
+bazel_dep(name = "rules_cc", version = "0.2.16")
 bazel_dep(name = "rules_python", version = "1.0.0")
+
+# Apply this patch in your project if you want to use shared libraries with mojo
+single_version_override(
+    module_name = "rules_cc",
+    patch_strip = 1,
+    patches = [
+        # https://github.com/bazelbuild/rules_cc/pull/578
+        "//tools:rules_cc.patch",
+    ],
+)
 
 mojo = use_extension("//mojo:extensions.bzl", "mojo")
 mojo.toolchain()
