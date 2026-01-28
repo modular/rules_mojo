@@ -137,7 +137,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
         fixits_file = ctx.actions.declare_file(ctx.label.name + ".mojo_fixits.yaml")
         compile_outputs.append(fixits_file)
         output_group_kwargs["mojo_fixits"] = depset([fixits_file])
-        args.add("--experimental-export-fixit", fixits_file.path)
+        args.add("--experimental-export-fixit", fixits_file)
 
     ctx.actions.run(
         executable = mojo_toolchain.mojo,
