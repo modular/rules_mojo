@@ -56,3 +56,9 @@ versions(
     dev_dependency = True,
     python_versions = _PYTHON_VERSIONS,
 )
+
+link_hack = use_repo_rule("//mojo/private:link_hack.bzl", "link_hack")
+
+link_hack(
+    name = "build_bazel_rules_android",  # See link_hack.bzl for details
+)
