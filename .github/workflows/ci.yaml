@@ -18,6 +18,7 @@ jobs:
           - ubuntu-latest
         bazel:
           - 8.x
+          - 9.x
           - latest
           - last_rc
           - last_green
