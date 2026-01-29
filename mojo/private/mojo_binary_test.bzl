@@ -52,6 +52,9 @@ This is useful for shared sanitizer libraries which need to have rpaths added
 by bazel.
 """,
     ),
+    "_export_fixits": attr.label(
+        default = Label("@rules_mojo//:experimental_export_fixits"),
+    ),
 }
 
 _TOOLCHAINS = use_cpp_toolchain() + [
@@ -128,11 +131,19 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     if ctx.attr.enable_assertions:
         args.add("-D", "ASSERT=all")
 
+    output_group_kwargs = {}
+    compile_outputs = [object_file]
+    if ctx.attr._export_fixits[BuildSettingInfo].value:
+        fixits_file = ctx.actions.declare_file(ctx.label.name + ".mojo_fixits.yaml")
+        compile_outputs.append(fixits_file)
+        output_group_kwargs["mojo_fixits"] = depset([fixits_file])
+        args.add("--experimental-export-fixit", fixits_file)
+
     ctx.actions.run(
         executable = mojo_toolchain.mojo,
         tools = mojo_toolchain.all_tools,
         inputs = depset(ctx.files.srcs + ctx.files.additional_compiler_inputs, transitive = [transitive_mojopkgs]),
-        outputs = [object_file],
+        outputs = compile_outputs,
         arguments = [args],
         mnemonic = "MojoCompile",
         progress_message = "%{label} compiling mojo object",
@@ -267,6 +278,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
                     ]),
                 ),
             ),
+            OutputGroupInfo(**output_group_kwargs),
         ]
     else:
         return [
@@ -277,6 +289,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
             RunEnvironmentInfo(
                 environment = runtime_env,
             ),
+            OutputGroupInfo(**output_group_kwargs),
         ]
 
 mojo_binary = rule(

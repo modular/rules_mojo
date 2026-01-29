@@ -1,0 +1,19 @@
+load("//mojo:mojo_binary.bzl", "mojo_binary")
+load("//mojo:mojo_library.bzl", "mojo_library")
+
+# TODO: Find a fixit that doesn't fail the build, verify the output file
+
+mojo_binary(
+    name = "fixits",
+    srcs = ["fixits.mojo"],
+    tags = ["manual"],
+)
+
+mojo_library(
+    name = "package",
+    srcs = [
+        "package/__init__.mojo",
+        "package/package.mojo",
+    ],
+    tags = ["manual"],
+)

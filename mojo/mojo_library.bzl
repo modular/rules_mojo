@@ -32,13 +32,21 @@ def _mojo_library_implementation(ctx):
         if not file.dirname.startswith(root_directory):
             args.add_all([file], map_each = _format_include)
 
+    output_group_kwargs = {}
+    package_outputs = [mojo_package]
+    if ctx.attr._export_fixits[BuildSettingInfo].value:
+        fixits_file = ctx.actions.declare_file(ctx.label.name + ".mojo_fixits.yaml")
+        package_outputs.append(fixits_file)
+        output_group_kwargs["mojo_fixits"] = depset([fixits_file])
+        args.add("--experimental-export-fixit", fixits_file)
+
     file_args.add_all(transitive_mojopkgs, map_each = _format_include)
     file_args.add(root_directory)
     ctx.actions.run(
         executable = mojo_toolchain.mojo,
         inputs = depset(ctx.files.srcs + ctx.files.additional_compiler_inputs, transitive = [transitive_mojopkgs]),
         tools = mojo_toolchain.all_tools,
-        outputs = [mojo_package],
+        outputs = package_outputs,
         arguments = [args, file_args],
         mnemonic = "MojoPackage",
         progress_message = "%{label} building mojo package",
@@ -67,6 +75,7 @@ def _mojo_library_implementation(ctx):
             import_paths = depset([mojo_package.dirname], transitive = [import_paths]),
             mojopkgs = depset([mojo_package], transitive = [transitive_mojopkgs]),
         ),
+        OutputGroupInfo(**output_group_kwargs),
     ]
 
 mojo_library = rule(
@@ -103,6 +112,9 @@ package' since it does not accept many flags.
         "data": attr.label_list(),
         "_mojo_package_copts": attr.label(
             default = Label("//:mojo_package_copt"),
+        ),
+        "_export_fixits": attr.label(
+            default = Label("@rules_mojo//:experimental_export_fixits"),
         ),
     },
     toolchains = ["//:toolchain_type"],
