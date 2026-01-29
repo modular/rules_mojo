@@ -19,6 +19,11 @@ toolchain_type(
 )
 
 toolchain_type(
+    name = "copts_toolchain_type",
+    visibility = ["//visibility:public"],
+)
+
+toolchain_type(
     name = "gpu_toolchain_type",
     visibility = ["//visibility:public"],
 )

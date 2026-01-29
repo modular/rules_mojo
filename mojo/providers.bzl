@@ -20,6 +20,14 @@ MojoToolchainInfo = provider(
     },
 )
 
+MojoCoptsToolchainInfo = provider(
+    doc = "Provider holding additional compiler options for the Mojo compiler.",
+    fields = {
+        "copts": "Additional compiler options to pass to the Mojo compiler.",
+        "package_copts": "Additional compiler options to pass to the Mojo compiler when running 'mojo package'.",
+    },
+)
+
 MojoGPUToolchainInfo = provider(
     doc = "Provider holding information about the GPU being targeted by Mojo.",
     fields = {
