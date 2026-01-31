@@ -1,7 +1,7 @@
 """The Mojo compiler toolchain."""
 
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
-load("//mojo:providers.bzl", "MojoInfo", "MojoToolchainInfo")
+load("//mojo:providers.bzl", "MojoCoptsToolchainInfo", "MojoInfo", "MojoToolchainInfo")
 
 def _mojo_toolchain_impl(ctx):
     tool_files = []
@@ -10,6 +10,7 @@ def _mojo_toolchain_impl(ctx):
         tool_files.append(dep[DefaultInfo].files)
 
     copts = list(ctx.attr.copts)
+    package_copts = list(ctx.attr.package_copts)
     gpu_toolchain = ctx.toolchains["//:gpu_toolchain_type"]
     if gpu_toolchain:
         copts.append("--target-accelerator=" + gpu_toolchain.mojo_gpu_toolchain_info.target_accelerator)
@@ -22,12 +23,17 @@ def _mojo_toolchain_impl(ctx):
         if min_os:
             copts.append("--target-triple=arm64-apple-macosx{}".format(min_os))
 
+    copts_toolchain = ctx.toolchains["//:copts_toolchain_type"]
+    if copts_toolchain:
+        copts.extend(copts_toolchain.copts_toolchain_info.copts)
+        package_copts = copts_toolchain.copts_toolchain_info.package_copts
+
     return [
         platform_common.ToolchainInfo(
             mojo_toolchain_info = MojoToolchainInfo(
                 all_tools = tool_files,
                 copts = copts,
-                package_copts = ctx.attr.package_copts,
+                package_copts = package_copts,
                 lld = ctx.executable.lld,
                 mojo = ctx.executable.mojo,
                 implicit_deps = ctx.attr.implicit_deps,
@@ -82,6 +88,34 @@ Defines the Mojo compiler toolchain.
 """,
     toolchains = [
         config_common.toolchain_type("//:gpu_toolchain_type", mandatory = False),
+        config_common.toolchain_type("//:copts_toolchain_type", mandatory = False),
     ],
     fragments = ["cpp", "apple"],
+)
+
+def _mojo_copts_toolchain_impl(ctx):
+    return [
+        platform_common.ToolchainInfo(
+            copts_toolchain_info = MojoCoptsToolchainInfo(
+                copts = ctx.attr.copts,
+                package_copts = ctx.attr.package_copts,
+            ),
+        ),
+    ]
+
+mojo_copts_toolchain = rule(
+    implementation = _mojo_copts_toolchain_impl,
+    attrs = {
+        "copts": attr.string_list(
+            mandatory = True,
+            doc = "Additional compiler options to pass to the Mojo compiler.",
+        ),
+        "package_copts": attr.string_list(
+            mandatory = True,
+            doc = "Additional compiler options to pass to the Mojo compiler when running 'mojo package'.",
+        ),
+    },
+    doc = """\
+Defines additional compiler options for the Mojo compiler.
+""",
 )
