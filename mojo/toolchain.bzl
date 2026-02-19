@@ -14,8 +14,6 @@ def _mojo_toolchain_impl(ctx):
     gpu_toolchain = ctx.toolchains["//:gpu_toolchain_type"]
     if gpu_toolchain:
         copts.append("--target-accelerator=" + gpu_toolchain.mojo_gpu_toolchain_info.target_accelerator)
-    else:
-        copts.append("--target-accelerator=NONE")
 
     is_macos = ctx.target_platform_has_constraint(ctx.attr._macos_constraint[platform_common.ConstraintValueInfo])
     if is_macos:
