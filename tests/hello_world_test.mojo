@@ -1,4 +1,4 @@
-from testing import assert_equal
+from std.testing import assert_equal
 from package.package import foo
 
 

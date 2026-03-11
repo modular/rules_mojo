@@ -1,8 +1,8 @@
-from python import Python
-from os import getenv
-from testing import assert_true
+from std.python import Python
+from std.os import getenv
+from std.testing import assert_true
 
-def main():
+def main() raises:
     sys = Python.import_module("sys")
     print("Python executable:", sys.executable)
     print("Python version:", sys.version)
