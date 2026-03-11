@@ -1,8 +1,8 @@
-from os import abort
+from std.os import abort
 
-from python import Python, PythonObject
-from python.bindings import PythonModuleBuilder
-from python._cpython import PyObjectPtr
+from std.python import Python, PythonObject
+from std.python.bindings import PythonModuleBuilder
+from std.python._cpython import PyObjectPtr
 
 
 @export

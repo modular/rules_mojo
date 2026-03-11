@@ -4,17 +4,13 @@ load("//mojo:mojo_host_platform.bzl", "mojo_host_platform")
 load("//mojo/private:mojo_gpu_toolchains_repository.bzl", "mojo_gpu_toolchains_repository")
 
 _PLATFORMS = ["linux_aarch64", "linux_x86_64", "macos_arm64"]
-_DEFAULT_VERSION = "0.26.2.0.dev2026012806"
+_DEFAULT_VERSION = "0.26.3.0.dev2026031105"
 _KNOWN_SHAS = {
-    "0.26.1.0.dev2026011405": {
-        "linux_aarch64": "f365b74545234d891f76db0395dfcfc41eb4591a611d361251738ba197d8281b",
-        "linux_x86_64": "4f0f0aa0eb6c815cd081c76a8218865a3d22d0a33fa502245d41e1a6ad836a15",
-        "macos_arm64": "0ea255379d009779e6a3ccda7039146f33cdd15324c3e97d659a6fb1644f2519",
-    },
-    "0.26.2.0.dev2026012806": {
-        "linux_aarch64": "1883a67311f8f51c17869c81b93014153215afff078aee0da454823400ecb218",
-        "linux_x86_64": "91f88e2fd9b4c612f9c08da95cfcb9a4a1291f603c95314f35ed6366736f01c6",
-        "macos_arm64": "ba37e525b6ba6a7e4a70a8bbef83bce1187541a2d4da625943c3a604d69b261c",
+    "0.26.3.0.dev2026031105": {
+        "linux_aarch64": "a62136e7d0bd0a44bc0d0b62e6179180d721c99c7308fd4c666885c37f43740e",
+        "linux_x86_64": "acf1777039b79c9f75e814ca0124ab913c02a68a4f4bb919e6fed183fa2f2602",
+        "macos_arm64": "50b994a44fa52f2487e81e288dbb2e417da7132fffe0e908a2e3a1ec9418e42e",
+        "mojo_compiler_mojo_libs": "32fb42e57af02309f35b668c0e4eb78fc87d0459165dca0a10223ab6d37a5cb3",
     },
 }
 _PLATFORM_MAPPINGS = {
@@ -26,20 +22,25 @@ _NULL_SHAS = {
     "linux_aarch64": "",
     "linux_x86_64": "",
     "macos_arm64": "",
+    "mojo_compiler_mojo_libs": "",
 }
 
 def _mojo_toolchain_impl(rctx):
-    base_url = rctx.attr.base_url or "https://whl.modular.com/nightly/mojo-compiler"
-    rctx.download_and_extract(
-        url = "{}/mojo_compiler-{}-py3-none-{}.whl".format(
-            base_url,
-            rctx.attr.version,
-            _PLATFORM_MAPPINGS[rctx.attr.platform],
-        ),
-        sha256 = _KNOWN_SHAS.get(rctx.attr.version, _NULL_SHAS)[rctx.attr.platform],
-        type = "zip",
-        strip_prefix = "mojo_compiler-{}.data/platlib/modular".format(rctx.attr.version),
-    )
+    for whl in "mojo_compiler", "mojo_compiler_mojo_libs":
+        base_url = (rctx.attr.base_url or "https://whl.modular.com/nightly/") + whl.replace("_", "-")
+        platform = _PLATFORM_MAPPINGS[rctx.attr.platform] if whl == "mojo_compiler" else "any"
+        sha_key = rctx.attr.platform if whl == "mojo_compiler" else "mojo_compiler_mojo_libs"
+        rctx.download_and_extract(
+            url = "{}/{}-{}-py3-none-{}.whl".format(
+                base_url,
+                whl,
+                rctx.attr.version,
+                platform,
+            ),
+            sha256 = _KNOWN_SHAS.get(rctx.attr.version, _NULL_SHAS)[sha_key],
+            type = "zip",
+            strip_prefix = "{}-{}.data/platlib/modular".format(whl, rctx.attr.version),
+        )
 
     rctx.template(
         "BUILD.bazel",

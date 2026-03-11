@@ -1,9 +1,9 @@
-from python import Python
-from testing import assert_equal
-import os
-import subprocess
+from std.python import Python
+from std.testing import assert_equal
+import std.os
+import std.subprocess
 
-def test_basic_numpy_example():
+def test_basic_numpy_example() raises:
     var np = Python.import_module("numpy")
     var array = np.array(
         Python.list(
@@ -14,5 +14,5 @@ def test_basic_numpy_example():
     assert_equal(String(array.shape), "(2, 3)")
 
 
-def main():
+def main() raises:
     test_basic_numpy_example()
