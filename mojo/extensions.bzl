@@ -27,7 +27,7 @@ _NULL_SHAS = {
 
 def _mojo_toolchain_impl(rctx):
     for whl in "mojo_compiler", "mojo_compiler_mojo_libs":
-        base_url = (rctx.attr.base_url or "https://whl.modular.com/nightly/") + whl.replace("_", "-")
+        base_url = (rctx.attr.base_url or "https://whl.modular.com/nightly") + "/" + whl.replace("_", "-")
         platform = _PLATFORM_MAPPINGS[rctx.attr.platform] if whl == "mojo_compiler" else "any"
         sha_key = rctx.attr.platform if whl == "mojo_compiler" else "mojo_compiler_mojo_libs"
         rctx.download_and_extract(
