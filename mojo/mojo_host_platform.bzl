@@ -124,7 +124,7 @@ def _get_apple_constraint(rctx, gpu_mapping):
 def _impl(rctx):
     constraints = []
 
-    if rctx.os.name == "linux" and rctx.os.arch == "amd64":
+    if rctx.os.name == "linux" and (rctx.os.arch == "amd64" or rctx.os.arch == "aarch64"):
         # A system may have both rocm-smi and nvidia-smi installed, check both.
         nvidia_smi = rctx.which("nvidia-smi")
 
