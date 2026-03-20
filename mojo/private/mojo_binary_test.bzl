@@ -93,6 +93,9 @@ def _find_main(name, srcs, main):
 def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     cc_toolchain = find_cpp_toolchain(ctx)
     mojo_toolchain = ctx.exec_groups["mojo_compile"].toolchains["//:toolchain_type"].mojo_toolchain_info
+    build_env = getattr(ctx.exec_groups["mojo_compile"].toolchains["//:toolchain_type"], "build_env", {})
+    runtime_env_extra = getattr(ctx.exec_groups["mojo_compile"].toolchains["//:toolchain_type"], "runtime_env", {})
+    extra_runfiles = getattr(ctx.exec_groups["mojo_compile"].toolchains["//:toolchain_type"], "extra_runfiles", [])
     py_toolchain = ctx.toolchains[_PYTHON_TOOLCHAIN_TYPE]
 
     object_file = ctx.actions.declare_file(ctx.label.name + ".lo")
@@ -154,7 +157,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
             "MODULAR_MOJO_MAX_LLD_PATH": mojo_toolchain.lld.path,
             "PATH": "/dev/null",  # Avoid using the host's PATH
             "TEST_TMPDIR": ".",
-        },
+        } | build_env,
         use_default_shell_env = True,
         exec_group = "mojo_compile",
         toolchain = "//:toolchain_type",
@@ -200,6 +203,8 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     transitive_runfiles = [
         ctx.runfiles(transitive_files = py_toolchain.py3_runtime.files),
     ]
+    if extra_runfiles:
+        transitive_runfiles.append(ctx.runfiles(files = extra_runfiles))
     for target in data:
         transitive_runfiles.append(target[DefaultInfo].default_runfiles)
 
@@ -248,6 +253,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
         "PYTHONPATH": python_path,
         "PYTHONSAFEPATH": "affirmative",
     }
+    runtime_env.update(runtime_env_extra)
     for key, value in runtime_env.items():
         runtime_env[key] = ctx.expand_make_variables(
             "env",

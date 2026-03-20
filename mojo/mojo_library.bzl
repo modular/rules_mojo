@@ -9,6 +9,7 @@ def _format_include(arg):
 
 def _mojo_library_implementation(ctx):
     mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
+    build_env = getattr(ctx.toolchains["//:toolchain_type"], "build_env", {})
 
     mojo_package = ctx.actions.declare_file(ctx.label.name + ".mojopkg")
     args = ctx.actions.args()
@@ -54,7 +55,7 @@ def _mojo_library_implementation(ctx):
             "MODULAR_CRASH_REPORTING_ENABLED": "false",
             "PATH": "/dev/null",  # Avoid using the host's PATH
             "TEST_TMPDIR": ".",  # Make sure any cache files are written to somewhere bazel will cleanup
-        },
+        } | build_env,
         use_default_shell_env = True,
         toolchain = "//:toolchain_type",
         execution_requirements = {
