@@ -2,7 +2,7 @@
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//mojo:providers.bzl", "MojoInfo")
-load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo")
+load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "is_exec_config")
 
 def _format_include(arg):
     return ["-I", arg.dirname]
@@ -18,7 +18,7 @@ def _mojo_library_implementation(ctx):
     args.add("-o", mojo_package)
 
     args.add_all(mojo_toolchain.package_copts)
-    if "-exec-" not in ctx.bin_dir.path:
+    if not is_exec_config(ctx):
         args.add_all(ctx.attr._mojo_package_copts[BuildSettingInfo].value)
     args.add_all([
         ctx.expand_location(copt, targets = ctx.attr.additional_compiler_inputs)

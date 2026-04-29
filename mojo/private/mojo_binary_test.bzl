@@ -9,7 +9,7 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_python//python:py_info.bzl", "PyInfo")
 load("//mojo:providers.bzl", "MojoInfo")
 load(":transitions.bzl", "python_version_transition")
-load(":utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo")
+load(":utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "is_exec_config")
 
 _PYTHON_TOOLCHAIN_TYPE = "@rules_python//python:toolchain_type"
 _ATTRS = {
@@ -125,7 +125,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     args.add_all(mojo_toolchain.copts)
 
     # Ignore default mojo flags for exec built binaries
-    if "-exec-" not in ctx.bin_dir.path:
+    if not is_exec_config(ctx):
         args.add_all(ctx.attr._mojo_copts[BuildSettingInfo].value)
     args.add_all([
         ctx.expand_location(copt, targets = ctx.attr.additional_compiler_inputs)
