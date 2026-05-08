@@ -113,7 +113,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
             args.add("-I", file.dirname)
 
     all_deps = ctx.attr.deps + mojo_toolchain.implicit_deps + ([ctx.attr._link_extra_lib] if ctx.attr._link_extra_lib else [])
-    import_paths, transitive_mojopkgs = collect_mojoinfo(all_deps)
+    import_paths, transitive_mojodeps = collect_mojoinfo(all_deps)
     args.add_all(import_paths, before_each = "-I")
 
     # NOTE: Argument order:
@@ -145,7 +145,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     ctx.actions.run(
         executable = mojo_toolchain.mojo,
         tools = mojo_toolchain.all_tools,
-        inputs = depset(ctx.files.srcs + ctx.files.additional_compiler_inputs, transitive = [transitive_mojopkgs]),
+        inputs = depset(ctx.files.srcs + ctx.files.additional_compiler_inputs, transitive = [transitive_mojodeps]),
         outputs = compile_outputs,
         arguments = [args],
         mnemonic = "MojoCompile",

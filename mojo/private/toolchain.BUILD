@@ -33,10 +33,13 @@ _INTERNAL_LIBRARIES = [
 ]
 
 mojo_import(
-    name = "all_mojopkgs",
-    mojopkgs = glob(
+    name = "all_mojodeps",
+    mojodeps = glob(
         ["lib/mojo/**/*.mojopkg"],
         allow_empty = False,
+    ) + glob(
+        ["lib/mojo/**/*.mojoc"],
+        allow_empty = True,
     ),
 )
 
@@ -46,7 +49,7 @@ mojo_toolchain(
     implicit_deps = [
         name
         for name, _ in _INTERNAL_LIBRARIES
-    ] + ([":all_mojopkgs"] if "{INCLUDE_MOJOPKGS}" else []),
+    ] + ([":all_mojodeps"] if "{INCLUDE_MOJOPKGS}" else []),
     lld = "bin/lld",
     mojo = "bin/mojo",
     visibility = ["//visibility:public"],

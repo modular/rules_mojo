@@ -68,7 +68,7 @@ _mojo_toolchain_repository = repository_rule(
             default = "",
         ),
         "use_prebuilt_packages": attr.bool(
-            doc = "Whether to automatically add prebuilt mojopkgs to every mojo target.",
+            doc = "Whether to automatically add prebuilt mojo packages to every mojo target.",
             mandatory = True,
         ),
         "_template": attr.label(
@@ -177,7 +177,7 @@ _toolchain_tag = tag_class(
             default = "",
         ),
         "use_prebuilt_packages": attr.bool(
-            doc = "Whether to automatically add prebuilt mojopkgs to every mojo target.",
+            doc = "Whether to automatically add prebuilt mojo packages to every mojo target.",
             default = True,
         ),
     },

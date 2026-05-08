@@ -1,4 +1,5 @@
-"""Compile Mojo files into a mojopkg that can be consumed by other Mojo targets."""
+"""Compile Mojo files into a precompiled object (mojoc) that can be consumed by
+other Mojo targets."""
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//mojo:providers.bzl", "MojoInfo")
@@ -25,7 +26,7 @@ def _mojo_library_implementation(ctx):
         for copt in ctx.attr.copts
     ])
 
-    import_paths, transitive_mojopkgs = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
+    import_paths, transitive_mojodeps = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
     root_directory = ctx.files.srcs[0].dirname
 
     file_args = ctx.actions.args()
@@ -41,11 +42,11 @@ def _mojo_library_implementation(ctx):
         output_group_kwargs["mojo_fixits"] = depset([fixits_file])
         args.add("--experimental-export-fixit", fixits_file)
 
-    file_args.add_all(transitive_mojopkgs, map_each = _format_include)
+    file_args.add_all(transitive_mojodeps, map_each = _format_include)
     file_args.add(root_directory)
     ctx.actions.run(
         executable = mojo_toolchain.mojo,
-        inputs = depset(ctx.files.srcs + ctx.files.additional_compiler_inputs, transitive = [transitive_mojopkgs]),
+        inputs = depset(ctx.files.srcs + ctx.files.additional_compiler_inputs, transitive = [transitive_mojodeps]),
         tools = mojo_toolchain.all_tools,
         outputs = package_outputs,
         arguments = [args, file_args],
@@ -74,7 +75,7 @@ def _mojo_library_implementation(ctx):
         ),
         MojoInfo(
             import_paths = depset([mojo_package.dirname], transitive = [import_paths]),
-            mojopkgs = depset([mojo_package], transitive = [transitive_mojopkgs]),
+            mojodeps = depset([mojo_package], transitive = [transitive_mojodeps]),
         ),
         OutputGroupInfo(**output_group_kwargs),
     ]

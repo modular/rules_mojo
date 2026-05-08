@@ -15,14 +15,14 @@ def collect_mojoinfo(deps):
         A single MojoInfo object with the combined data.
     """
     import_paths = []
-    mojopkgs = []
+    mojodeps = []
     for dep in deps:
         if MojoInfo in dep:
             info = dep[MojoInfo]
-            mojopkgs.append(info.mojopkgs)
+            mojodeps.append(info.mojodeps)
             import_paths.append(info.import_paths)
 
-    return depset(transitive = import_paths), depset(transitive = mojopkgs)
+    return depset(transitive = import_paths), depset(transitive = mojodeps)
 
 def is_exec_config(ctx):
     """Determines whether the current configuration is an exec configuration.
