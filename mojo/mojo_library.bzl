@@ -12,15 +12,15 @@ def _mojo_library_implementation(ctx):
     mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
     build_env = getattr(ctx.toolchains["//:toolchain_type"], "build_env", {})
 
-    mojo_package = ctx.actions.declare_file(ctx.label.name + ".mojopkg")
+    mojo_precmp_file = ctx.actions.declare_file(ctx.label.name + ".mojoc")
     args = ctx.actions.args()
-    args.add("package")
+    args.add("precompile")
     args.add("-strip-file-prefix=.")
-    args.add("-o", mojo_package)
+    args.add("-o", mojo_precmp_file)
 
-    args.add_all(mojo_toolchain.package_copts)
+    args.add_all(mojo_toolchain.precompile_copts)
     if not is_exec_config(ctx):
-        args.add_all(ctx.attr._mojo_package_copts[BuildSettingInfo].value)
+        args.add_all(ctx.attr._mojo_precompile_copts[BuildSettingInfo].value)
     args.add_all([
         ctx.expand_location(copt, targets = ctx.attr.additional_compiler_inputs)
         for copt in ctx.attr.copts
@@ -35,10 +35,10 @@ def _mojo_library_implementation(ctx):
             args.add_all([file], map_each = _format_include)
 
     output_group_kwargs = {}
-    package_outputs = [mojo_package]
+    precompile_outputs = [mojo_precmp_file]
     if ctx.attr._export_fixits[BuildSettingInfo].value:
         fixits_file = ctx.actions.declare_file(ctx.label.name + ".mojo_fixits.yaml")
-        package_outputs.append(fixits_file)
+        precompile_outputs.append(fixits_file)
         output_group_kwargs["mojo_fixits"] = depset([fixits_file])
         args.add("--experimental-export-fixit", fixits_file)
 
@@ -48,10 +48,10 @@ def _mojo_library_implementation(ctx):
         executable = mojo_toolchain.mojo,
         inputs = depset(ctx.files.srcs + ctx.files.additional_compiler_inputs, transitive = [transitive_mojodeps]),
         tools = mojo_toolchain.all_tools,
-        outputs = package_outputs,
+        outputs = precompile_outputs,
         arguments = [args, file_args],
-        mnemonic = "MojoPackage",
-        progress_message = "%{label} building mojo package",
+        mnemonic = "MojoPrecompile",
+        progress_message = "%{label} precompiling mojo file",
         env = {
             "MODULAR_CRASH_REPORTING_ENABLED": "false",
             "PATH": "/dev/null",  # Avoid using the host's PATH
@@ -70,12 +70,12 @@ def _mojo_library_implementation(ctx):
 
     return [
         DefaultInfo(
-            files = depset([mojo_package]),
+            files = depset([mojo_precmp_file]),
             runfiles = ctx.runfiles(ctx.files.data).merge_all(transitive_runfiles),
         ),
         MojoInfo(
-            import_paths = depset([mojo_package.dirname], transitive = [import_paths]),
-            mojodeps = depset([mojo_package], transitive = [transitive_mojodeps]),
+            import_paths = depset([mojo_precmp_file.dirname], transitive = [import_paths]),
+            mojodeps = depset([mojo_precmp_file], transitive = [transitive_mojodeps]),
         ),
         OutputGroupInfo(**output_group_kwargs),
     ]
@@ -95,13 +95,13 @@ then be used in copts with the $(location) function.
 Additional compiler options to pass to the Mojo compiler.
 
 Order of options:
-1. copts from mojo_toolchain.package_copts
-2. copts from //:mojo_package_copt (if not building in exec config)
+1. copts from mojo_toolchain.precompile_copts
+2. copts from //:mojo_precompile_copt (if not building in exec config)
 3. copts from this attribute, with $(location) expanded for files in
    additional_compiler_inputs.
 
 NOTE: copts from --mojocopt and mojo_toolchain.copts are not passed to 'mojo
-package' since it does not accept many flags.
+precompile' since it does not accept many flags.
 """,
         ),
         "srcs": attr.label_list(
@@ -112,8 +112,8 @@ package' since it does not accept many flags.
             providers = [MojoInfo],
         ),
         "data": attr.label_list(),
-        "_mojo_package_copts": attr.label(
-            default = Label("//:mojo_package_copt"),
+        "_mojo_precompile_copts": attr.label(
+            default = Label("//:mojo_precompile_copt"),
         ),
         "_export_fixits": attr.label(
             default = Label("@rules_mojo//:experimental_export_fixits"),

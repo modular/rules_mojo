@@ -13,7 +13,7 @@ MojoToolchainInfo = provider(
     fields = {
         "all_tools": "All the files that must be available in actions in order for the toolchain to work.",
         "copts": "Additional compiler options to pass to the Mojo compiler.",
-        "package_copts": "Additional compiler options to pass to the Mojo compiler when running 'mojo package'.",
+        "precompile_copts": "Additional compiler options to pass to the Mojo compiler when running 'mojo precompile'.",
         "lld": "The lld compiler executable to link with",
         "mojo": "The mojo compiler executable to build with",
         "implicit_deps": "Implicit dependencies that every target should depend on, providing either CcInfo, or MojoInfo",
@@ -24,7 +24,7 @@ MojoCoptsToolchainInfo = provider(
     doc = "Provider holding additional compiler options for the Mojo compiler.",
     fields = {
         "copts": "Additional compiler options to pass to the Mojo compiler.",
-        "package_copts": "Additional compiler options to pass to the Mojo compiler when running 'mojo package'.",
+        "precompile_copts": "Additional compiler options to pass to the Mojo compiler when running 'mojo precompile'.",
     },
 )
 

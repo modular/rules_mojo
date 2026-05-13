@@ -10,7 +10,7 @@ def _mojo_toolchain_impl(ctx):
         tool_files.append(dep[DefaultInfo].files)
 
     copts = list(ctx.attr.copts)
-    package_copts = list(ctx.attr.package_copts)
+    precompile_copts = list(ctx.attr.precompile_copts)
     gpu_toolchain = ctx.toolchains["//:gpu_toolchain_type"]
     if gpu_toolchain:
         copts.append("--target-accelerator=" + gpu_toolchain.mojo_gpu_toolchain_info.target_accelerator)
@@ -24,14 +24,14 @@ def _mojo_toolchain_impl(ctx):
     copts_toolchain = ctx.toolchains["//:copts_toolchain_type"]
     if copts_toolchain:
         copts.extend(copts_toolchain.copts_toolchain_info.copts)
-        package_copts = copts_toolchain.copts_toolchain_info.package_copts
+        precompile_copts = copts_toolchain.copts_toolchain_info.precompile_copts
 
     return [
         platform_common.ToolchainInfo(
             mojo_toolchain_info = MojoToolchainInfo(
                 all_tools = tool_files,
                 copts = copts,
-                package_copts = package_copts,
+                precompile_copts = precompile_copts,
                 lld = ctx.executable.lld,
                 mojo = ctx.executable.mojo,
                 implicit_deps = ctx.attr.implicit_deps,
@@ -46,9 +46,9 @@ mojo_toolchain = rule(
             mandatory = False,
             doc = "Additional compiler options to pass to the Mojo compiler.",
         ),
-        "package_copts": attr.string_list(
+        "precompile_copts": attr.string_list(
             mandatory = False,
-            doc = "Additional compiler options to pass to the Mojo compiler when running 'mojo package'.",
+            doc = "Additional compiler options to pass to the Mojo compiler when running 'mojo precompile'.",
         ),
         "extra_tools": attr.label_list(
             providers = [DefaultInfo],
@@ -96,7 +96,7 @@ def _mojo_copts_toolchain_impl(ctx):
         platform_common.ToolchainInfo(
             copts_toolchain_info = MojoCoptsToolchainInfo(
                 copts = ctx.attr.copts,
-                package_copts = ctx.attr.package_copts,
+                precompile_copts = ctx.attr.precompile_copts,
             ),
         ),
     ]
@@ -108,9 +108,9 @@ mojo_copts_toolchain = rule(
             mandatory = True,
             doc = "Additional compiler options to pass to the Mojo compiler.",
         ),
-        "package_copts": attr.string_list(
+        "precompile_copts": attr.string_list(
             mandatory = True,
-            doc = "Additional compiler options to pass to the Mojo compiler when running 'mojo package'.",
+            doc = "Additional compiler options to pass to the Mojo compiler when running 'mojo precompile'.",
         ),
     },
     doc = """\

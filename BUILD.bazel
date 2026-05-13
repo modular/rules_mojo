@@ -8,7 +8,7 @@ repeatable_string_flag(
 )
 
 repeatable_string_flag(
-    name = "mojo_package_copt",
+    name = "mojo_precompile_copt",
     build_setting_default = [],
     visibility = ["//visibility:public"],
 )
