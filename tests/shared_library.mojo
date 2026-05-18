@@ -1,3 +1,3 @@
 @export
-fn foo() -> Int:
+def foo() -> Int:
     return 42

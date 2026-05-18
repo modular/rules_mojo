@@ -1,4 +1,4 @@
 from package.package import foo
 
-fn main():
+def main():
     print("Hello, World!", foo())

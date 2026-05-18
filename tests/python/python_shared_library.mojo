@@ -6,7 +6,7 @@ from std.python._cpython import PyObjectPtr
 
 
 @export
-fn PyInit_python_shared_library() -> PythonObject:
+def PyInit_python_shared_library() -> PythonObject:
     """Create a Python module with a function binding for `mojo_count_args`."""
 
     try:
@@ -22,7 +22,7 @@ fn PyInit_python_shared_library() -> PythonObject:
 
 
 @export
-fn mojo_count_args(py_self: PyObjectPtr, args: PyObjectPtr) -> PyObjectPtr:
+def mojo_count_args(py_self: PyObjectPtr, args: PyObjectPtr) -> PyObjectPtr:
     ref cpython = Python().cpython()
 
     var count = cpython.PyObject_Length(args)

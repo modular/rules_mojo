@@ -1,4 +1,4 @@
 import layout  # All vendored dependencies are available
 
-fn foo() -> Int:
+def foo() -> Int:
     return 42
