@@ -35,10 +35,10 @@ _INTERNAL_LIBRARIES = [
 mojo_import(
     name = "all_mojodeps",
     mojodeps = glob(
-        ["lib/mojo/**/*.mojopkg"],
-        allow_empty = False,
-    ) + glob(
-        ["lib/mojo/**/*.mojoc"],
+        [
+            "lib/mojo/**/*.mojopkg",
+            "lib/mojo/**/*.mojoc",
+        ],
         allow_empty = True,
     ),
 )
