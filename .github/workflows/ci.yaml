@@ -32,4 +32,7 @@ jobs:
         run: |
           bazel version
           bazel info
-      - run: bazel test //...
+      - name: CPU Info
+        run: |
+          lscpu
+      - run: bazel test --config=ci //...
