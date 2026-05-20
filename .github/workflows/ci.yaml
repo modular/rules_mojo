@@ -34,5 +34,5 @@ jobs:
           bazel info
       - name: CPU Info
         run: |
-          lscpu
+          lscpu || true
       - run: bazel test --config=ci //...
