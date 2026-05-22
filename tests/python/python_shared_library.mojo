@@ -21,8 +21,7 @@ def PyInit_python_shared_library() -> PythonObject:
         abort(String("failed to create Python module: ", e))
 
 
-@export
-def mojo_count_args(py_self: PyObjectPtr, args: PyObjectPtr) -> PyObjectPtr:
+def mojo_count_args(py_self: PyObjectPtr, args: PyObjectPtr) abi("C") -> PyObjectPtr:
     ref cpython = Python().cpython()
 
     var count = cpython.PyObject_Length(args)
