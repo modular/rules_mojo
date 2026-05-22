@@ -32,4 +32,7 @@ jobs:
         run: |
           bazel version
           bazel info
+      - name: CPU Info
+        run: |
+          lscpu || true
       - run: bazel test //...
