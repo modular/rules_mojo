@@ -6,8 +6,3 @@ info --platforms=@platforms//host
 
 common --platforms=@mojo_host_platform
 common --host_platform=@mojo_host_platform
-
-# HACK: Github Action runners using AMD EPYC CPUs have AVX512 disabled.
-# Mojo will happily generate those instructions, but then they crash at runtime.
-# Totally disable AVX512 to circumvent the issue.
-common:ci --//:mojo_copt=--target-features=-avx512f,-avx512bw,-avx512cd,-avx512dq,-avx512vl,-avx512ifma,-avx512vbmi,-avx512vbmi2,-avx512vnni,-avx512bitalg,-avx512vpopcntdq,-avx512fp16,-avx512bf16
