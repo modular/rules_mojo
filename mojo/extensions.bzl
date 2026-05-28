@@ -4,7 +4,7 @@ load("//mojo:mojo_host_platform.bzl", "mojo_host_platform")
 load("//mojo/private:mojo_gpu_toolchains_repository.bzl", "mojo_gpu_toolchains_repository")
 
 _PLATFORMS = ["linux_aarch64", "linux_x86_64", "macos_arm64"]
-_DEFAULT_VERSION = "1.0.0b2.dev2026052215"
+_DEFAULT_VERSION = "1.0.0b2.dev2026052815"
 _KNOWN_SHAS = {
     "1.0.0b2.dev2026052215": {
         "linux_aarch64": "328f9d3349ffc15ea4e0b77e29acdaf4cbb5dc86fcadb2b5e6ffef5d512697b8",

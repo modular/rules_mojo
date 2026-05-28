@@ -36,3 +36,8 @@ jobs:
         run: |
           lscpu || true
       - run: bazel test //...
+      - name: Debug Session
+        if: ${{ failure() }}
+        uses: mxschmitt/action-tmate@53a5c23a925969671a6bb98ea70a4f650928ef93
+        with:
+          limit-access-to-actor: false
