@@ -3,7 +3,7 @@
 load("@bazel_features//:features.bzl", "bazel_features")
 load("//mojo:providers.bzl", "MojoInfo")
 
-MOJO_EXTENSIONS = ("mojo", "🔥")
+MOJO_EXTENSIONS = ("mojo",)
 
 def collect_mojoinfo(deps):
     """Get a combined MojoInfo from all the passed dependencies.
