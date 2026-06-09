@@ -3,7 +3,7 @@ other Mojo targets."""
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//mojo:providers.bzl", "MojoInfo")
-load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "is_exec_config")
+load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "collect_src_mojoinfo", "is_exec_config", "source_import_path")
 
 def _format_include(arg):
     return ["-I", arg.dirname]
@@ -29,6 +29,16 @@ def _mojo_library_implementation(ctx):
     import_paths, transitive_mojodeps = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
     root_directory = ctx.files.srcs[0].dirname
 
+    # The directory to put on the import path so this library is importable by
+    # its module name when consumed from source (see source_import_path).
+    own_src_import_path = source_import_path(ctx.files.srcs, root_directory)
+
+    # Source-mode dependencies: compile against their sources directly rather
+    # than their precompiled .mojoc files. Both fields are depsets, so this
+    # already carries the full transitive closure of every src_dep.
+    src_import_paths, src_mojodeps = collect_src_mojoinfo(ctx.attr.src_deps)
+    args.add_all(src_import_paths, before_each = "-I")
+
     file_args = ctx.actions.args()
     for file in ctx.files.srcs:
         if not file.dirname.startswith(root_directory):
@@ -44,9 +54,17 @@ def _mojo_library_implementation(ctx):
 
     file_args.add_all(transitive_mojodeps, map_each = _format_include)
     file_args.add(root_directory)
+
     ctx.actions.run(
         executable = mojo_toolchain.mojo,
-        inputs = depset(ctx.files.srcs + ctx.files.additional_compiler_inputs, transitive = [transitive_mojodeps]),
+        inputs = depset(
+            # Direct items must be Files: use ctx.files.* (Files), never
+            # ctx.attr.* (Targets) — mixing the two is what breaks the depset.
+            ctx.files.srcs + ctx.files.additional_compiler_inputs,
+            # Merge other Files via transitive depsets. src_mojodeps is the
+            # transitive closure of every src_dep's sources.
+            transitive = [transitive_mojodeps, src_mojodeps],
+        ),
         tools = mojo_toolchain.all_tools,
         outputs = precompile_outputs,
         arguments = [args, file_args],
@@ -76,6 +94,11 @@ def _mojo_library_implementation(ctx):
         MojoInfo(
             import_paths = depset([mojo_precmp_file.dirname], transitive = [import_paths]),
             mojodeps = depset([mojo_precmp_file], transitive = [transitive_mojodeps]),
+            # Always populate the source-mode fields (regardless of which mode
+            # this target was built with) so downstream src_deps can pull this
+            # target's sources and import path, plus everything it depends on.
+            src_import_paths = depset([own_src_import_path], transitive = [src_import_paths]),
+            src_mojodeps = depset(ctx.files.srcs, transitive = [src_mojodeps]),
         ),
         OutputGroupInfo(**output_group_kwargs),
     ]
@@ -110,6 +133,18 @@ precompile' since it does not accept many flags.
         ),
         "deps": attr.label_list(
             providers = [MojoInfo],
+        ),
+        "src_deps": attr.label_list(
+            providers = [MojoInfo],
+            doc = """\
+Like deps, but imports these dependencies from source instead of from
+precompiled files.
+
+Providing dependencies here may improve clean build time (as it allows parallel
+builds), but at the detriment of incremental build time. Note that these do not
+provide transitive dependencies. It is advised to not heavily mix and match
+this with `deps`.
+            """,
         ),
         "data": attr.label_list(),
         "_mojo_precompile_copts": attr.label(

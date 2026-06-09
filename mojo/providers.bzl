@@ -5,6 +5,8 @@ MojoInfo = provider(
     fields = {
         "import_paths": "Directories that should be passed with -I to mojo",
         "mojodeps": "The precompiled mojo files required by the target",
+        "src_import_paths": "depset of directories (strings) that should be passed with -I to mojo when building with src_deps",
+        "src_mojodeps": "depset of source Files of this target and all of its (transitive) dependencies",
     },
 )
 

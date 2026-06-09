@@ -1,0 +1,8 @@
+load("//mojo:mojo_library.bzl", "mojo_library")
+
+mojo_library(
+    name = "b",
+    srcs = ["__init__.mojo"],
+    src_deps = ["//tests/src_deps_a/a"],
+    visibility = ["//tests:__subpackages__"],
+)
