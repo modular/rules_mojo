@@ -112,7 +112,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     args.add("-o", object_file)
 
     main = _find_main(ctx.label.name, ctx.files.srcs, ctx.file.main)
-    args.add_all([main], map_each = _format_path)
+    args.add(main)
     root_directory = main.dirname
     for file in ctx.files.srcs:
         if not file.dirname.startswith(root_directory):
