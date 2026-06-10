@@ -93,6 +93,9 @@ def _find_main(name, srcs, main):
 def _format_include(arg):
     return ["-I", arg.dirname]
 
+def _format_path(arg):
+    return [arg.path]
+
 def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     cc_toolchain = find_cpp_toolchain(ctx)
     mojo_toolchain = ctx.exec_groups["mojo_compile"].toolchains["//:toolchain_type"].mojo_toolchain_info
@@ -109,7 +112,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     args.add("-o", object_file)
 
     main = _find_main(ctx.label.name, ctx.files.srcs, ctx.file.main)
-    args.add(main.path)
+    args.add_all([main], map_each = _format_path)
     root_directory = main.dirname
     for file in ctx.files.srcs:
         if not file.dirname.startswith(root_directory):
