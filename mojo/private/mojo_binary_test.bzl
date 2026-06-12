@@ -110,6 +110,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     args.add("-strip-file-prefix=.")
     args.add("--emit", "object")
     args.add("-o", object_file)
+    args.add("--lld-path", mojo_toolchain.lld)
 
     main = _find_main(ctx.label.name, ctx.files.srcs, ctx.file.main)
     args.add(main)
