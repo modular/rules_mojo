@@ -87,6 +87,13 @@ def _get_amd_constraints_with_rocm_smi(rctx, rocm_smi, gpu_mapping):
 
     return constraints
 
+def _toolchain_supports_metal4(rctx):
+    result = rctx.execute(["/usr/bin/xcrun", "--sdk", "macosx", "--show-sdk-version"])
+    _log_result(rctx, "/usr/bin/xcrun --sdk macosx --show-sdk-version", result)
+    if result.return_code != 0:
+        return False
+    return int(result.stdout.strip().split(".")[0]) >= 26
+
 def _get_apple_constraint(rctx, gpu_mapping):
     result = rctx.execute(["/usr/bin/sw_vers", "--productVersion"])
     _log_result(rctx, "/usr/sbin/sw_vers --productVersion", result)
@@ -102,21 +109,29 @@ def _get_apple_constraint(rctx, gpu_mapping):
 
     _log_result(rctx, "/usr/sbin/system_profiler SPDisplaysDataType", result)
 
-    metal_version = None
+    chipset_model = None
+    metal_support = None
     for line in result.stdout.splitlines():
-        if "Metal Support:" in line:
-            metal_version = line
-            break
+        if "Chipset Model:" in line:
+            chipset_model = line
+        elif "Metal Support:" in line:
+            metal_support = line
 
-    if not metal_version:  # macOS VMs may not have GPUs attached
+    if not chipset_model:  # macOS VMs may not have GPUs attached
         return None
 
+    metal4 = (
+        metal_support and "Metal 4" in metal_support and
+        _toolchain_supports_metal4(rctx)
+    )
+
     for gpu_name, constraint in gpu_mapping.items():
-        if gpu_name in metal_version:
-            if constraint:
-                return "@mojo_gpu_toolchains//:{}_gpu".format(constraint)
-            else:
+        if gpu_name in chipset_model:
+            if not constraint:
                 return None
+            if metal4:
+                constraint += "_metal4"
+            return "@mojo_gpu_toolchains//:{}_gpu".format(constraint)
 
     _fail(rctx, "Unrecognized system_profiler output, please add it to your gpu_mapping in the MODULE.bazel file: {}".format(result.stdout))
     return None
