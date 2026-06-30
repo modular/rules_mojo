@@ -13,6 +13,7 @@ _INTERNAL_LIBRARIES = [
             # Globbed to allow .so or .dylib
             "lib/libAsyncRTMojoBindings.*",
             "lib/libAsyncRTRuntimeGlobals.*",
+            "lib/libDeviceContextGlobals.*",
             "lib/libKGENCompilerRTShared.*",
             "lib/libMSupportGlobals.*",
         ],
