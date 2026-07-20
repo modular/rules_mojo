@@ -93,8 +93,8 @@ def _find_main(name, srcs, main):
 def _format_include(arg):
     return ["-I", arg.dirname]
 
-def _format_path(arg):
-    return [arg.path]
+def _add_include(arg):
+    return ["-I", arg]
 
 def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     cc_toolchain = find_cpp_toolchain(ctx)
@@ -120,8 +120,8 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
             args.add_all([file], map_each = _format_include)
 
     all_deps = ctx.attr.deps + mojo_toolchain.implicit_deps + ([ctx.attr._link_extra_lib] if ctx.attr._link_extra_lib else [])
-    _, transitive_mojodeps = collect_mojoinfo(all_deps)
-    args.add_all(transitive_mojodeps, map_each = _format_include)
+    transitive_includes, transitive_mojodeps = collect_mojoinfo(all_deps)
+    args.add_all(transitive_includes, map_each = _add_include)
 
     # NOTE: Argument order:
     # 1. Basic functional arguments

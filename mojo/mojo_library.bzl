@@ -68,13 +68,15 @@ def _mojo_library_implementation(ctx):
     for target in ctx.attr.data:
         transitive_runfiles.append(target[DefaultInfo].default_runfiles)
 
+    import_path = mojo_precmp_file.dirname + "/" + ctx.attr.import_path
+
     return [
         DefaultInfo(
             files = depset([mojo_precmp_file]),
             runfiles = ctx.runfiles(ctx.files.data).merge_all(transitive_runfiles),
         ),
         MojoInfo(
-            import_paths = depset([mojo_precmp_file.dirname], transitive = [import_paths]),
+            import_paths = depset([import_path], transitive = [import_paths]),
             mojodeps = depset([mojo_precmp_file], transitive = [transitive_mojodeps]),
         ),
         OutputGroupInfo(**output_group_kwargs),
@@ -110,6 +112,13 @@ precompile' since it does not accept many flags.
         ),
         "deps": attr.label_list(
             providers = [MojoInfo],
+        ),
+        "import_path": attr.string(
+            doc = """
+Path relative to this package where it should be imported from.
+Generally something like `.`, `..`, or `../..`.
+""",
+            default = ".",
         ),
         "data": attr.label_list(),
         "_mojo_precompile_copts": attr.label(

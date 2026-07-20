@@ -6,7 +6,7 @@ from std.python._cpython import PyObjectPtr
 
 
 @export
-def PyInit_python_shared_library() -> PythonObject:
+def PyInit_python_shared_library() abi("C") -> PythonObject:
     """Create a Python module with a function binding for `mojo_count_args`."""
 
     try:
