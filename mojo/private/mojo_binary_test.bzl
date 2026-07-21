@@ -9,7 +9,7 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_python//python:py_info.bzl", "PyInfo")
 load("//mojo:providers.bzl", "MojoInfo")
 load(":transitions.bzl", "python_version_transition")
-load(":utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "is_exec_config")
+load(":utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "format_import", "is_exec_config")
 
 _PYTHON_TOOLCHAIN_TYPE = "@rules_python//python:toolchain_type"
 _ATTRS = {
@@ -93,9 +93,6 @@ def _find_main(name, srcs, main):
 def _format_include(arg):
     return ["-I", arg.dirname]
 
-def _add_include(arg):
-    return ["-I", arg]
-
 def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     cc_toolchain = find_cpp_toolchain(ctx)
     mojo_toolchain = ctx.exec_groups["mojo_compile"].toolchains["//:toolchain_type"].mojo_toolchain_info
@@ -121,7 +118,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
 
     all_deps = ctx.attr.deps + mojo_toolchain.implicit_deps + ([ctx.attr._link_extra_lib] if ctx.attr._link_extra_lib else [])
     transitive_includes, transitive_mojodeps = collect_mojoinfo(all_deps)
-    args.add_all(transitive_includes, map_each = _add_include)
+    args.add_all(transitive_includes, map_each = format_import)
 
     # NOTE: Argument order:
     # 1. Basic functional arguments

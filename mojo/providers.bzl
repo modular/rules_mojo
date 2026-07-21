@@ -3,7 +3,7 @@
 MojoInfo = provider(
     doc = "Information about how to build a Mojo target.",
     fields = {
-        "import_paths": "Directories that should be passed with -I to mojo",
+        "import_paths": "Depset of struct(package = File, import_path = str). Each element is a mojoc file paired with its relative import path.",
         "mojodeps": "The precompiled mojo files required by the target",
     },
 )

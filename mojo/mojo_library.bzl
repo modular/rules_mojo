@@ -3,7 +3,7 @@ other Mojo targets."""
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("//mojo:providers.bzl", "MojoInfo")
-load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "is_exec_config")
+load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "format_import", "is_exec_config")
 
 def _format_include(arg):
     return ["-I", arg.dirname]
@@ -42,7 +42,7 @@ def _mojo_library_implementation(ctx):
         output_group_kwargs["mojo_fixits"] = depset([fixits_file])
         args.add("--experimental-export-fixit", fixits_file)
 
-    file_args.add_all(transitive_mojodeps, map_each = _format_include)
+    file_args.add_all(import_paths, map_each = format_import)
     file_args.add(root_directory)
     ctx.actions.run(
         executable = mojo_toolchain.mojo,
@@ -68,15 +68,17 @@ def _mojo_library_implementation(ctx):
     for target in ctx.attr.data:
         transitive_runfiles.append(target[DefaultInfo].default_runfiles)
 
-    import_path = mojo_precmp_file.dirname + "/" + ctx.attr.import_path
-
     return [
         DefaultInfo(
             files = depset([mojo_precmp_file]),
             runfiles = ctx.runfiles(ctx.files.data).merge_all(transitive_runfiles),
         ),
         MojoInfo(
-            import_paths = depset([import_path], transitive = [import_paths]),
+            # Passed through as a File + string combo so that it can be path mapped later.
+            import_paths = depset(
+                [struct(package = mojo_precmp_file, import_path = ctx.attr.import_path)],
+                transitive = [import_paths],
+            ),
             mojodeps = depset([mojo_precmp_file], transitive = [transitive_mojodeps]),
         ),
         OutputGroupInfo(**output_group_kwargs),

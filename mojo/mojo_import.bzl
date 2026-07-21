@@ -9,8 +9,11 @@ def _mojo_import_impl(ctx):
     return [
         DefaultInfo(files = depset(mojo_deps, transitive = [transitive_mojodeps])),
         MojoInfo(
-            import_paths = depset([pkg.dirname for pkg in mojo_deps], transitive = [import_paths]),
-            mojodeps = depset([pkg for pkg in mojo_deps], transitive = [transitive_mojodeps]),
+            import_paths = depset(
+                [struct(package = pkg, import_path = ".") for pkg in mojo_deps],
+                transitive = [import_paths],
+            ),
+            mojodeps = depset(mojo_deps, transitive = [transitive_mojodeps]),
         ),
     ]
 

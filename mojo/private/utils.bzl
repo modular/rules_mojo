@@ -1,6 +1,7 @@
 """Helpers internal to rules_mojo."""
 
 load("@bazel_features//:features.bzl", "bazel_features")
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("//mojo:providers.bzl", "MojoInfo")
 
 MOJO_EXTENSIONS = ("mojo",)
@@ -12,7 +13,9 @@ def collect_mojoinfo(deps):
         deps: A list of dependencies to collect MojoInfo from.
 
     Returns:
-        A single MojoInfo object with the combined data.
+        A tuple (imports, mojodeps) of two depsets combining every MojoInfo in
+        deps: `imports` holds struct(package, import_path) entries for building
+        -I flags, `mojodeps` holds the precompiled mojo Files for action inputs.
     """
     import_paths = []
     mojodeps = []
@@ -23,6 +26,9 @@ def collect_mojoinfo(deps):
             import_paths.append(info.import_paths)
 
     return depset(transitive = import_paths), depset(transitive = mojodeps)
+
+def format_import(dep):
+    return ["-I", paths.normalize(paths.join(dep.package.dirname, dep.import_path))]
 
 def is_exec_config(ctx):
     """Determines whether the current configuration is an exec configuration.
