@@ -8,6 +8,9 @@ load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "format_
 def _format_include(arg):
     return ["-I", arg.dirname]
 
+def _format_root(arg):
+    return arg.dirname
+
 def _mojo_library_implementation(ctx):
     mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
     build_env = getattr(ctx.toolchains["//:toolchain_type"], "build_env", {})
@@ -43,7 +46,7 @@ def _mojo_library_implementation(ctx):
         args.add("--experimental-export-fixit", fixits_file)
 
     file_args.add_all(import_paths, map_each = format_import)
-    file_args.add(root_directory)
+    file_args.add_all([ctx.files.srcs[0]], map_each = _format_root)
     ctx.actions.run(
         executable = mojo_toolchain.mojo,
         inputs = depset(ctx.files.srcs + ctx.files.additional_compiler_inputs, transitive = [transitive_mojodeps]),

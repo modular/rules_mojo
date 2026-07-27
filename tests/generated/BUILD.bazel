@@ -1,0 +1,37 @@
+# Regression test to ensure mojo_library and mojo_binary targets work with generated sources
+
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("//mojo:mojo_binary.bzl", "mojo_binary")
+load("//mojo:mojo_library.bzl", "mojo_library")
+
+genrule(
+    name = "srcs",
+    outs = [
+        "__init__.mojo",
+        "main.mojo",
+    ],
+    cmd = """cat << 'EOF' > $(location main.mojo)
+def main():
+    pass
+EOF
+touch $(location __init__.mojo)
+""",
+)
+
+mojo_library(
+    name = "lib",
+    srcs = [":__init__.mojo"],
+)
+
+mojo_binary(
+    name = "bin",
+    srcs = [":main.mojo"],
+)
+
+build_test(
+    name = "build_targets",
+    targets = [
+        ":lib",
+        ":bin",
+    ],
+)
