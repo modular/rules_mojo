@@ -10,6 +10,9 @@ load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "format_
 def _format_include(arg):
     return ["-I", arg.dirname]
 
+def _format_root(arg):
+    return arg.dirname
+
 def _format_root_import(ctx):
     package, import_path = ctx
     return ["-I", paths.normalize(paths.join(package, import_path))]
