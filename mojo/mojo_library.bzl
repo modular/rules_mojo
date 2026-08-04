@@ -32,7 +32,13 @@ def _mojo_library_implementation(ctx):
 
     # NOTE: cc deps are not passed to 'mojo precompile', they are only
     # propagated to the compile and link actions of the depending binary.
-    import_paths, transitive_mojodeps, ccdeps = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
+    import_paths, transitive_mojodeps, _ = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
+
+    # Binaries that depend on this already add the implicit deps, so there's
+    # two sources. If there's a transition on any of those targets, we can
+    # potentially depend on multiple different versions of the same binary.
+    # To avoid this, don't get CcInfo from the implicit deps.
+    _, _, ccdeps = collect_mojoinfo(ctx.attr.deps)
     root_directory = ctx.files.srcs[0].dirname
 
     file_args = ctx.actions.args()
