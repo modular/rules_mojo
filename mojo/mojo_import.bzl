@@ -21,7 +21,7 @@ mojo_import = rule(
     implementation = _mojo_import_impl,
     attrs = {
         "mojodeps": attr.label_list(
-            allow_files = [".mojopkg", ".mojoc"],
+            allow_files = [".mojoc"],
             doc = "The precompiled mojo files to import.",
         ),
         "deps": attr.label_list(

@@ -4,8 +4,14 @@ load("//mojo:mojo_host_platform.bzl", "mojo_host_platform")
 load("//mojo/private:mojo_gpu_toolchains_repository.bzl", "mojo_gpu_toolchains_repository")
 
 _PLATFORMS = ["linux_aarch64", "linux_x86_64", "macos_arm64"]
-_DEFAULT_VERSION = "1.0.0b3.dev2026072006"
+_DEFAULT_VERSION = "1.0.0b3.dev2026080206"
 _KNOWN_SHAS = {
+    "1.0.0b3.dev2026080206": {
+        "linux_aarch64": "42e2e9c06c91b962e1ac66155a2033a1148bcbde6417e9ea8561b59cbae8de5b",
+        "linux_x86_64": "b40788e38d4ccf1e931cd77f5bf41c7ba15b9ec3f35556b2e69a1eb09c7c359d",
+        "macos_arm64": "0b48f1f3d7face114b141792c5450ffb02bdd37955837a64e4f11b89cf4d88b5",
+        "mojo_compiler_mojo_libs": "481e6c48cfa0f4c0af53f57e450909f198ae1c54d0f3f5b7c29b0c707c6b26a9",
+    },
     "1.0.0b3.dev2026072006": {
         "linux_aarch64": "63ad1c8fe113abc6a617ecadc76d42a5cbcabe19a6ef01c90b5cbc4281b118e2",
         "linux_x86_64": "72c810694ebcc514a363857e3d8f07828be994cf26a9317b50839a3f09c45fa3",
