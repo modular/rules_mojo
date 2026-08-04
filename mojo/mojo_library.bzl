@@ -2,6 +2,7 @@
 other Mojo targets."""
 
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
+load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//mojo:providers.bzl", "MojoInfo")
 load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "format_import", "is_exec_config")
 
@@ -29,7 +30,9 @@ def _mojo_library_implementation(ctx):
         for copt in ctx.attr.copts
     ])
 
-    import_paths, transitive_mojodeps = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
+    # NOTE: cc deps are not passed to 'mojo precompile', they are only
+    # propagated to the compile and link actions of the depending binary.
+    import_paths, transitive_mojodeps, ccdeps = collect_mojoinfo(ctx.attr.deps + mojo_toolchain.implicit_deps)
     root_directory = ctx.files.srcs[0].dirname
 
     file_args = ctx.actions.args()
@@ -71,6 +74,12 @@ def _mojo_library_implementation(ctx):
     for target in ctx.attr.data:
         transitive_runfiles.append(target[DefaultInfo].default_runfiles)
 
+    # cc deps may require files at runtime, such as shared libraries, so
+    # forward their runfiles to whatever ends up depending on this target.
+    for target in ctx.attr.deps:
+        if CcInfo in target:
+            transitive_runfiles.append(target[DefaultInfo].default_runfiles)
+
     return [
         DefaultInfo(
             files = depset([mojo_precmp_file]),
@@ -83,6 +92,7 @@ def _mojo_library_implementation(ctx):
                 transitive = [import_paths],
             ),
             mojodeps = depset([mojo_precmp_file], transitive = [transitive_mojodeps]),
+            ccdeps = ccdeps,
         ),
         OutputGroupInfo(**output_group_kwargs),
     ]
@@ -116,7 +126,14 @@ precompile' since it does not accept many flags.
             allow_files = MOJO_EXTENSIONS,
         ),
         "deps": attr.label_list(
-            providers = [MojoInfo],
+            providers = [[MojoInfo], [CcInfo]],
+            doc = """\
+Mojo dependencies required to compile this target.
+
+Dependencies providing CcInfo are not used when precompiling this target, they
+are propagated to the compile and link actions of the mojo_binary, mojo_test, or
+mojo_shared_library that transitively depends on it.
+""",
         ),
         "import_path": attr.string(
             doc = """

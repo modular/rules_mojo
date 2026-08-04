@@ -1,5 +1,6 @@
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_import.bzl", "cc_import")
+load("//mojo:mojo_library.bzl", "mojo_library")
 load("//mojo:mojo_test.bzl", "mojo_test")
 
 mojo_test(
@@ -32,4 +33,38 @@ cc_import(
 cc_import(
     name = "bar_import",
     shared_library = ":bar",
+)
+
+# Separate set of tests for mojo_library targets propagating cc deps
+
+# Call C from Mojo
+mojo_library(
+    name = "mojo_lib",
+    srcs = [
+        "__init__.mojo",
+        "lib.mojo",
+    ],
+    deps = [
+        ":foo_import",
+    ],
+)
+
+mojo_test(
+    name = "mojo_cc_test",
+    srcs = ["mojo_cc_test.mojo"],
+    deps = [":mojo_lib"],
+)
+
+# Call C from Mojo through an intermediate mojo_library that has no cc deps of
+# its own, to verify cc deps are propagated transitively
+mojo_library(
+    name = "wrapper",
+    srcs = ["wrapper/__init__.mojo"],
+    deps = [":mojo_lib"],
+)
+
+mojo_test(
+    name = "transitive_cc_test",
+    srcs = ["transitive_cc_test.mojo"],
+    deps = [":wrapper"],
 )

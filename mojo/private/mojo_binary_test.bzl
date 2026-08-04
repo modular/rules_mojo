@@ -117,7 +117,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
             args.add_all([file], map_each = _format_include)
 
     all_deps = ctx.attr.deps + mojo_toolchain.implicit_deps + ([ctx.attr._link_extra_lib] if ctx.attr._link_extra_lib else [])
-    transitive_includes, transitive_mojodeps = collect_mojoinfo(all_deps)
+    transitive_includes, transitive_mojodeps, ccdeps = collect_mojoinfo(all_deps)
     args.add_all(transitive_includes, map_each = format_import)
 
     # NOTE: Argument order:
@@ -199,7 +199,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
         actions = ctx.actions,
         feature_configuration = feature_configuration,
         cc_toolchain = cc_toolchain,
-        linking_contexts = [object_linking_context] + [dep[CcInfo].linking_context for dep in all_deps if CcInfo in dep],
+        linking_contexts = [object_linking_context, ccdeps.linking_context],
         name = ctx.label.name,
         user_link_flags = ctx.attr.linkopts,
         **link_kwargs
@@ -215,9 +215,7 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     for target in data:
         transitive_runfiles.append(target[DefaultInfo].default_runfiles)
 
-    # Collect transitive shared libraries that must exist at runtime
     python_imports = []
-    transitive_libraries = []
     for target in all_deps:
         transitive_runfiles.append(target[DefaultInfo].default_runfiles)
 
@@ -227,13 +225,14 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
                 ctx.runfiles(transitive_files = target[PyInfo].transitive_sources),
             )
 
-        if CcInfo not in target:
-            continue
-        for linker_input in target[CcInfo].linking_context.linker_inputs.to_list():
-            for library in linker_input.libraries:
-                if library.dynamic_library and not library.pic_static_library and not library.static_library:
-                    transitive_libraries.append(depset([library]))
-                    transitive_runfiles.append(ctx.runfiles(transitive_files = depset([library.dynamic_library])))
+    # Collect transitive shared libraries that must exist at runtime, including
+    # those propagated through mojo_library deps
+    transitive_libraries = []
+    for linker_input in ccdeps.linking_context.linker_inputs.to_list():
+        for library in linker_input.libraries:
+            if library.dynamic_library and not library.pic_static_library and not library.static_library:
+                transitive_libraries.append(depset([library]))
+                transitive_runfiles.append(ctx.runfiles(transitive_files = depset([library.dynamic_library])))
 
     python_path = ""
     for path in depset(transitive = python_imports).to_list():

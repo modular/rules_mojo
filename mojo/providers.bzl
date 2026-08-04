@@ -5,6 +5,7 @@ MojoInfo = provider(
     fields = {
         "import_paths": "Depset of struct(package = File, import_path = str). Each element is a mojoc file paired with its relative import path.",
         "mojodeps": "The precompiled mojo files required by the target",
+        "ccdeps": "A merged CcInfo of the cc dependencies of the target and its transitive Mojo dependencies.",
     },
 )
 

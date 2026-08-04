@@ -5,7 +5,7 @@ load("//mojo/private:utils.bzl", "collect_mojoinfo")
 
 def _mojo_import_impl(ctx):
     mojo_deps = ctx.files.mojodeps
-    import_paths, transitive_mojodeps = collect_mojoinfo(ctx.attr.deps)
+    import_paths, transitive_mojodeps, ccdeps = collect_mojoinfo(ctx.attr.deps)
     return [
         DefaultInfo(files = depset(mojo_deps, transitive = [transitive_mojodeps])),
         MojoInfo(
@@ -14,6 +14,7 @@ def _mojo_import_impl(ctx):
                 transitive = [import_paths],
             ),
             mojodeps = depset(mojo_deps, transitive = [transitive_mojodeps]),
+            ccdeps = ccdeps,
         ),
     ]
 
