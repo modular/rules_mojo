@@ -3,6 +3,8 @@ load("//mojo:mojo_test.bzl", "mojo_test")
 mojo_test(
     name = "main",
     srcs = ["main.mojo"],
+    # TODO: Mojo doesn't officially support this yet, re-enable when it does
+    tags = ["manual"],
     visibility = ["//tests:__subpackages__"],
     deps = ["//tests/nested/outer:inner"],
 )
