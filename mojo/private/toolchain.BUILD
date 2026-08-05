@@ -11,15 +11,11 @@ _INTERNAL_LIBRARIES = [
     for library in glob(
         [
             # Globbed to allow .so or .dylib
-            "lib/libAsyncRTMojoBindings.*",
             "lib/libAsyncRTRuntimeGlobals.*",
             "lib/libKGENCompilerRTShared.*",
             "lib/libMSupportGlobals.*",
         ],
         allow_empty = False,
-    ) + glob(
-        ["lib/libNVPTX.so"],  # buildifier: disable=constant-glob
-        allow_empty = True,
     )
 ]
 

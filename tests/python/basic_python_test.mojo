@@ -3,7 +3,7 @@ from std.os import getenv
 from std.testing import assert_true
 
 def main() raises:
-    sys = Python.import_module("sys")
+    var sys = Python.import_module("sys")
     print("Python executable:", sys.executable)
     print("Python version:", sys.version)
     assert_true(sys.version.startswith(getenv("EXPECTED_PYTHON_VERSION")))
