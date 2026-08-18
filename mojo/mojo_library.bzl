@@ -1,6 +1,7 @@
 """Compile Mojo files into a precompiled object (mojoc) that can be consumed by
 other Mojo targets."""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//mojo:providers.bzl", "MojoInfo")
@@ -11,6 +12,10 @@ def _format_include(arg):
 
 def _format_root(arg):
     return arg.dirname
+
+def _format_root_import(ctx):
+    package, import_path = ctx
+    return ["-I", paths.normalize(paths.join(package, import_path))]
 
 def _mojo_library_implementation(ctx):
     mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
@@ -45,6 +50,8 @@ def _mojo_library_implementation(ctx):
     for file in ctx.files.srcs:
         if not file.dirname.startswith(root_directory):
             args.add_all([file], map_each = _format_include)
+    if ctx.attr.import_path != ".":
+        args.add_all([(ctx.label.package, ctx.attr.import_path)], map_each = _format_root_import)
 
     output_group_kwargs = {}
     precompile_outputs = [mojo_precmp_file]
