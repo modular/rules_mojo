@@ -9,6 +9,10 @@ on:
 
 jobs:
   test:
+    name: >-
+      ${{ matrix.mojo == 'default'
+          && format('test ({0}, {1})', matrix.os, matrix.bazel)
+          || format('test ({0}, {1}, {2})', matrix.os, matrix.bazel, matrix.mojo) }}
     permissions:
       contents: read
     strategy:
