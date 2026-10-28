@@ -4,13 +4,63 @@ load("//mojo:mojo_host_platform.bzl", "mojo_host_platform")
 load("//mojo/private:mojo_gpu_toolchains_repository.bzl", "mojo_gpu_toolchains_repository")
 
 _PLATFORMS = ["linux_aarch64", "linux_x86_64", "macos_arm64"]
-_DEFAULT_VERSION = "1.1.0.dev2026080506"
-_KNOWN_SHAS = {
-    "1.1.0.dev2026080506": {
-        "linux_aarch64": "d5715d4c2f13741081ff66685efde64f0a9cd8ffaeadfedf9a69f15864c43959",
-        "linux_x86_64": "6fe58f92ab6e09ad07a82b88849d439811a309c7f362ff5eaa513b288aa09e8d",
-        "macos_arm64": "8b0a34dc6fcebf85918649fe3f8910a8d41f297d55b13f824351c53efe72ef75",
-        "mojo_compiler_mojo_libs": "eb5e1cc348ac51110bf2b28f66e1cf1c764204bc80540ff2b6edd2b69adbeab3",
+_DEFAULT_VERSION = "1.2.0"
+
+# Generated from official wheel metadata; update with tools/getshas.py.
+_KNOWN_RELEASES = {
+    "1.0.0": {
+        "linux_aarch64": struct(
+            url = "https://files.pythonhosted.org/packages/a5/f9/cbfe2bf947d0926ad57599513d898f1e02ee0c60af1253b779ecaa810235/mojo_compiler-1.0.0-py3-none-manylinux_2_34_aarch64.whl",
+            sha256 = "3ae3eb0c58a8956f542e324f736866df0ae2f9f875e8a279cbeea961ec4e9ee8",
+        ),
+        "linux_x86_64": struct(
+            url = "https://files.pythonhosted.org/packages/f0/5f/f38fefe327d1c81e28def69c4a52ae4f75e389cb6e613a2c04ca8d68d582/mojo_compiler-1.0.0-py3-none-manylinux_2_34_x86_64.whl",
+            sha256 = "e9e60f9638e69ca0f4be7292468523fc98a143f58dbf9024f60ed68b874a867e",
+        ),
+        "macos_arm64": struct(
+            url = "https://files.pythonhosted.org/packages/60/59/c11cf3129d4bc77b1604ac3a84bee51ee1a7cd8a3a8fa25c14528f4bd51e/mojo_compiler-1.0.0-py3-none-macosx_13_0_arm64.whl",
+            sha256 = "5077ee27c0dfbbdf138a11ec12838b0d3f10148a874cf95040c9ca2332ae2622",
+        ),
+        "mojo_compiler_mojo_libs": struct(
+            url = "https://files.pythonhosted.org/packages/54/99/ea401ff1db56a4af8607283b95627e01b986fc67f510715b07f100118105/mojo_compiler_mojo_libs-1.0.0-py3-none-any.whl",
+            sha256 = "20a92e37ecbd19e2dbb1a525612a8de4c9f266f5536def55c5e2b0786320e8b3",
+        ),
+    },
+    "1.1.0": {
+        "linux_aarch64": struct(
+            url = "https://files.pythonhosted.org/packages/67/1c/2c93f967615e3581b124b1b5f4af29913994199e8741736d9c08ed3d9f13/mojo_compiler-1.1.0-py3-none-manylinux_2_34_aarch64.whl",
+            sha256 = "14ed7fe3570e1374a88bc8aa93dc4e9c519ea28e7f8d731ae4bf1c468d8179ec",
+        ),
+        "linux_x86_64": struct(
+            url = "https://files.pythonhosted.org/packages/e8/5e/31522e5336d63ab0fad18980cccf6c5cc2085c1a041ea3723eb916a17c08/mojo_compiler-1.1.0-py3-none-manylinux_2_34_x86_64.whl",
+            sha256 = "b47442278eb39705075f23d058b38a364bd68bdaa542ad514c187cee633beab7",
+        ),
+        "macos_arm64": struct(
+            url = "https://files.pythonhosted.org/packages/7e/47/4ee8cf2041538076d1a11bb3c2b3ed18791b52c1edec8e31ca244d841389/mojo_compiler-1.1.0-py3-none-macosx_13_0_arm64.whl",
+            sha256 = "02daffdfd8fcd56ecfb74e93d2adfaf4551cbb0b384094508fd00c1d5d81cb00",
+        ),
+        "mojo_compiler_mojo_libs": struct(
+            url = "https://files.pythonhosted.org/packages/83/8d/4fb2147d140b6ea688f6d256b3119d6554a3d50095d802f01bf24234bd7d/mojo_compiler_mojo_libs-1.1.0-py3-none-any.whl",
+            sha256 = "dd8c5382e27fe5c1ffe0834d267f549abbffee35bf1a8d605cf24252ff95a2e6",
+        ),
+    },
+    "1.2.0": {
+        "linux_aarch64": struct(
+            url = "https://files.pythonhosted.org/packages/62/c6/c716f593f140abf9cf40dd44a1b6a4745ead22cd3fd03cc856b024e6c799/mojo_compiler-1.2.0-py3-none-manylinux_2_34_aarch64.whl",
+            sha256 = "72d6f8321a50136945598ab4b9874e9980bd03103bf93545444b4448919e48c9",
+        ),
+        "linux_x86_64": struct(
+            url = "https://files.pythonhosted.org/packages/54/8b/2758e8a2207793613d386f41e36f2bfd28837b157a659518c7b7474f7eb3/mojo_compiler-1.2.0-py3-none-manylinux_2_34_x86_64.whl",
+            sha256 = "3ee34a3b26c6cccaa9523a0e8db8f67bea954497d782d97c9e61c3c4ecbdac7b",
+        ),
+        "macos_arm64": struct(
+            url = "https://files.pythonhosted.org/packages/d6/0c/df22d1807e2bddebd992caee411e6cbe0c5d41834e36bff883f4a7d95fc3/mojo_compiler-1.2.0-py3-none-macosx_13_0_arm64.whl",
+            sha256 = "bc1777d9b3cf4522ee213cc83876b1955499aec2aa8dd8a75ce477f0cd227a90",
+        ),
+        "mojo_compiler_mojo_libs": struct(
+            url = "https://files.pythonhosted.org/packages/3d/bb/9602cbee467102584721c700dda8033af67c3888c6c8edb6f66275c1df74/mojo_compiler_mojo_libs-1.2.0-py3-none-any.whl",
+            sha256 = "3d631f7e798c11d0029c4a892ebae1f5742751fac0c526af74b45a8ae07c3acb",
+        ),
     },
 }
 _PLATFORM_MAPPINGS = {
@@ -18,26 +68,19 @@ _PLATFORM_MAPPINGS = {
     "linux_x86_64": "manylinux_2_34_x86_64",
     "macos_arm64": "macosx_13_0_arm64",
 }
-_NULL_SHAS = {
-    "linux_aarch64": "",
-    "linux_x86_64": "",
-    "macos_arm64": "",
-    "mojo_compiler_mojo_libs": "",
-}
 
 def _mojo_toolchain_impl(rctx):
     for whl in "mojo_compiler", "mojo_compiler_mojo_libs":
         base_url = (rctx.attr.base_url or "https://whl.modular.com/nightly") + "/" + whl.replace("_", "-")
         platform = _PLATFORM_MAPPINGS[rctx.attr.platform] if whl == "mojo_compiler" else "any"
         sha_key = rctx.attr.platform if whl == "mojo_compiler" else "mojo_compiler_mojo_libs"
+        release = _KNOWN_RELEASES.get(rctx.attr.version, {}).get(sha_key)
+        url = "{}/{}-{}-py3-none-{}.whl".format(base_url, whl, rctx.attr.version, platform)
+        if release and not rctx.attr.base_url:
+            url = release.url
         rctx.download_and_extract(
-            url = "{}/{}-{}-py3-none-{}.whl".format(
-                base_url,
-                whl,
-                rctx.attr.version,
-                platform,
-            ),
-            sha256 = _KNOWN_SHAS.get(rctx.attr.version, _NULL_SHAS)[sha_key],
+            url = url,
+            sha256 = release.sha256 if release else "",
             type = "zip",
             strip_prefix = "{}-{}.data/platlib/modular".format(whl, rctx.attr.version),
         )

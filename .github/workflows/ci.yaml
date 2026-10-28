@@ -9,6 +9,10 @@ on:
 
 jobs:
   test:
+    name: >-
+      ${{ matrix.mojo == 'default'
+          && format('test ({0}, {1})', matrix.os, matrix.bazel)
+          || format('test ({0}, {1}, {2})', matrix.os, matrix.bazel, matrix.mojo) }}
     permissions:
       contents: read
     strategy:
@@ -16,18 +20,54 @@ jobs:
         os:
           - macos-15
           - ubuntu-latest
+          - ubuntu-24.04-arm
         bazel:
           - 8.x
           - 9.x
           - latest
           - last_rc
           - last_green
+        mojo:
+          - default
+        include:
+          - os: macos-15
+            bazel: 8.x
+            mojo: 1.0.0
+          - os: ubuntu-latest
+            bazel: 8.x
+            mojo: 1.0.0
+          - os: ubuntu-24.04-arm
+            bazel: 8.x
+            mojo: 1.0.0
+          - os: macos-15
+            bazel: 8.x
+            mojo: 1.1.0
+          - os: ubuntu-latest
+            bazel: 8.x
+            mojo: 1.1.0
+          - os: ubuntu-24.04-arm
+            bazel: 8.x
+            mojo: 1.1.0
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
       USE_BAZEL_VERSION: ${{ matrix.bazel }}
     steps:
       - uses: actions/checkout@v4
+      - name: Select Mojo version
+        if: matrix.mojo != 'default'
+        env:
+          MOJO_VERSION: ${{ matrix.mojo }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          module = Path("MODULE.bazel")
+          source = module.read_text()
+          assert source.count("mojo.toolchain()") == 1
+          module.write_text(source.replace("mojo.toolchain()", f'mojo.toolchain(version = "{os.environ["MOJO_VERSION"]}")'))
+          PY
       - name: Bazel Info
         run: |
           bazel version
@@ -39,3 +79,5 @@ jobs:
       - run: |
           bazel test //...
           bazel test --experimental_output_paths=strip //...
+      - name: Check fixit exports
+        run: bazel build --experimental_output_paths=strip --//:experimental_export_fixits --output_groups=+mojo_fixits //tests:hello_world
