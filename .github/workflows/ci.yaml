@@ -7,14 +7,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   test:
-    name: >-
-      ${{ matrix.mojo == 'default'
-          && format('test ({0}, {1})', matrix.os, matrix.bazel)
-          || format('test ({0}, {1}, {2})', matrix.os, matrix.bazel, matrix.mojo) }}
-    permissions:
-      contents: read
+    name: test (${{ matrix.os }}, ${{ matrix.bazel }})
     strategy:
       matrix:
         os:
@@ -24,50 +22,21 @@ jobs:
         bazel:
           - 8.x
           - 9.x
-          - latest
-          - last_rc
-          - last_green
-        mojo:
-          - default
-        include:
-          - os: macos-15
-            bazel: 8.x
-            mojo: 1.0.0
-          - os: ubuntu-latest
-            bazel: 8.x
-            mojo: 1.0.0
-          - os: ubuntu-24.04-arm
-            bazel: 8.x
-            mojo: 1.0.0
-          - os: macos-15
-            bazel: 8.x
-            mojo: 1.1.0
-          - os: ubuntu-latest
-            bazel: 8.x
-            mojo: 1.1.0
-          - os: ubuntu-24.04-arm
-            bazel: 8.x
-            mojo: 1.1.0
+          # Unlike 10.x, 10.* includes release candidates.
+          - '10.*'
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
       USE_BAZEL_VERSION: ${{ matrix.bazel }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Select Mojo version
-        if: matrix.mojo != 'default'
-        env:
-          MOJO_VERSION: ${{ matrix.mojo }}
-        run: |
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          module = Path("MODULE.bazel")
-          source = module.read_text()
-          assert source.count("mojo.toolchain()") == 1
-          module.write_text(source.replace("mojo.toolchain()", f'mojo.toolchain(version = "{os.environ["MOJO_VERSION"]}")'))
-          PY
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: bazel-contrib/setup-bazel@104e3eea9447cdaa4b00d0fb46191a3985d26ab3 # 0.19.1
+        with:
+          bazelisk-cache: true
+          repository-cache: true
+          disk-cache: true
+          cache-version: ci-v1-${{ runner.os }}-${{ runner.arch }}-${{ matrix.bazel }}
+          cache-save: ${{ github.event_name == 'push' && github.repository == 'modular/rules_mojo' && github.ref == 'refs/heads/main' }}
       - name: Bazel Info
         run: |
           bazel version
@@ -81,3 +50,20 @@ jobs:
           bazel test --experimental_output_paths=strip //...
       - name: Check fixit exports
         run: bazel build --experimental_output_paths=strip --//:experimental_export_fixits --output_groups=+mojo_fixits //tests:hello_world
+
+  # These six names are required by the existing main CI ruleset. Each reports
+  # the result of the entire test matrix; the legacy Bazel labels are aliases.
+  required-checks:
+    name: test (${{ matrix.os }}, ${{ matrix.bazel }})
+    needs: test
+    if: ${{ always() }}
+    strategy:
+      matrix:
+        os: [macos-15, ubuntu-latest]
+        bazel: [latest, last_rc, last_green]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all test jobs to succeed
+        env:
+          TEST_RESULT: ${{ needs.test.result }}
+        run: test "$TEST_RESULT" = success
