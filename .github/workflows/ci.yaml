@@ -51,11 +51,17 @@ jobs:
       - name: Check fixit exports
         run: bazel build --experimental_output_paths=strip --//:experimental_export_fixits --output_groups=+mojo_fixits //tests:hello_world
 
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: j178/prek-action@44924fe9ef4a6f88253c4b6b1bf11c689d3ce53d # v3.1.0
+
   # These six names are required by the existing main CI ruleset. Each reports
-  # the result of the entire test matrix; the legacy Bazel labels are aliases.
+  # the test matrix and pre-commit results; the legacy Bazel labels are aliases.
   required-checks:
     name: test (${{ matrix.os }}, ${{ matrix.bazel }})
-    needs: test
+    needs: [test, pre-commit]
     if: ${{ always() }}
     strategy:
       matrix:
@@ -63,7 +69,10 @@ jobs:
         bazel: [latest, last_rc, last_green]
     runs-on: ubuntu-latest
     steps:
-      - name: Require all test jobs to succeed
+      - name: Require tests and pre-commit to succeed
         env:
           TEST_RESULT: ${{ needs.test.result }}
-        run: test "$TEST_RESULT" = success
+          PRE_COMMIT_RESULT: ${{ needs.pre-commit.result }}
+        run: |
+          test "$TEST_RESULT" = success
+          test "$PRE_COMMIT_RESULT" = success
