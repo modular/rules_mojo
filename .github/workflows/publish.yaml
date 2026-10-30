@@ -1,0 +1,36 @@
+# Called by release.yaml after the release and its artifacts are ready.
+name: Publish to BCR
+
+on:
+  workflow_call:
+    inputs:
+      tag_name:
+        description: Validated unprefixed release tag
+        required: true
+        type: string
+    secrets:
+      publish_token:
+        description: Token for pushing to the BCR fork and opening its pull request
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
+      attestations: write
+    uses: bazel-contrib/publish-to-bcr/.github/workflows/publish.yaml@v1.6.0 # 3b1b972e41764b9a7498cf9128ed4ed2258a3687
+    with:
+      tag_name: ${{ inputs.tag_name }}
+      tag_prefix: ''
+      registry_fork: modular/bazel-central-registry
+      attest: true
+      draft: false
+      download_default_release_artifacts: true
+      release_artifacts_run_id: ${{ github.run_id }}
+    secrets:
+      publish_token: ${{ secrets.publish_token }}

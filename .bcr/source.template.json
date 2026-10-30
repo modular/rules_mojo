@@ -1,0 +1,7 @@
+{
+    "integrity": "",
+    "strip_prefix": "rules_mojo-{VERSION}",
+    "url": "https://github.com/{OWNER}/{REPO}/releases/download/{TAG}/rules_mojo-{VERSION}.tar.gz",
+    "patch_strip": 1,
+    "patches": {}
+}

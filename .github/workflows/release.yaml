@@ -1,0 +1,113 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      tag_name:
+        description: Existing unprefixed release tag (for example, 0.9.0)
+        required: true
+        type: string
+    secrets:
+      publish_token:
+        description: Token for pushing to the BCR fork and opening its pull request
+        required: true
+      BCR_PUBLISH_TOKEN:
+        description: Repository secret used as the fallback for manual dispatch
+        required: false
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: Existing unprefixed release tag (for example, 0.9.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# Serialize manual and callable release runs to prevent competing preparations.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.repository == 'modular/rules_mojo' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.validate.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate release tag
+        id: validate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          NUMBER='(0|[1-9][0-9]*)'
+          IDENTIFIER="($NUMBER|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
+          if [[ ! "$RELEASE_TAG" =~ ^$NUMBER\.$NUMBER\.$NUMBER(-$IDENTIFIER(\.$IDENTIFIER)*)?$ ]]; then
+            echo 'Expected an unprefixed version such as 0.9.0 or 0.9.0-rc.1' >&2
+            exit 1
+          fi
+
+          # Require an existing upstream tag whose commit belongs to main.
+          git fetch --no-tags https://github.com/modular/rules_mojo.git \
+            +refs/heads/main:refs/remotes/upstream/main \
+            "+refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
+          COMMIT=$(git rev-parse --verify "refs/tags/$RELEASE_TAG^{commit}")
+          git merge-base --is-ancestor "$COMMIT" refs/remotes/upstream/main
+          for path in .github/workflows/{release.yaml,publish.yaml,release_prep.sh} \
+            .bcr/{metadata.template.json,source.template.json,presubmit.yml}; do
+            git cat-file -e "$COMMIT:$path"
+          done
+
+          # Include all pages and allow retries of drafts, preserving published releases.
+          PUBLISHED=$(gh api 'repos/modular/rules_mojo/releases?per_page=100' --paginate --slurp \
+            | jq --arg tag "$RELEASE_TAG" 'any(.[][]; .tag_name == $tag and .draft == false)')
+          if [[ "$PUBLISHED" == true ]]; then
+            echo "GitHub release $RELEASE_TAG is already published" >&2
+            exit 1
+          fi
+          PUBLISHED=$(gh api repos/bazelbuild/bazel-central-registry/contents/modules/rules_mojo/metadata.json \
+            -H 'Accept: application/vnd.github.raw+json' \
+            | jq --arg tag "$RELEASE_TAG" '.versions | index($tag) != null')
+          if [[ "$PUBLISHED" == true ]]; then
+            echo "rules_mojo@$RELEASE_TAG is already in the BCR" >&2
+            exit 1
+          fi
+
+          echo "tag_name=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "Validated $RELEASE_TAG at upstream main commit $COMMIT"
+
+  release:
+    needs: validate
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    uses: bazel-contrib/.github/.github/workflows/release_ruleset.yaml@v7.7.0 # 1d798ff015ed0696433e01e2c3ccbb2abefadad7
+    with:
+      tag_name: ${{ needs.validate.outputs.tag_name }}
+      prerelease: false
+      draft: false
+      # Cache writes are reserved for upstream main push CI runs.
+      mount_bazel_caches: false
+      release_files: rules_mojo-*.tar.gz
+
+  publish-to-bcr:
+    needs: [validate, release]
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
+      attestations: write
+    uses: ./.github/workflows/publish.yaml
+    with:
+      tag_name: ${{ needs.validate.outputs.tag_name }}
+    secrets:
+      publish_token: ${{ secrets.publish_token || secrets.BCR_PUBLISH_TOKEN }}
