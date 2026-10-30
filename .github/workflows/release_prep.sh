@@ -23,6 +23,18 @@ set -o noclobber
 git -C "$(git rev-parse --show-toplevel)" archive --format=tar --prefix="${PREFIX}/" "$TAG" | gzip -n > "$ARCHIVE"
 SHA=$(shasum -a 256 "$ARCHIVE" | awk '{print $1}')
 
+# Build API documentation in a separate output base so the archive contains
+# documentation outputs only.
+DOCS=$(mktemp -d)
+TARGETS=$(mktemp)
+trap 'bazel --output_base="$DOCS" shutdown; rm -rf "$DOCS"; rm -f "$TARGETS"' EXIT
+bazel --output_base="$DOCS" query --output=label --output_file="$TARGETS" 'kind("starlark_doc_extract rule", //...)'
+test -s "$TARGETS"
+bazel --output_base="$DOCS" build --target_pattern_file="$TARGETS" --remote_download_regex='.*doc_extract\.binaryproto'
+tar --create --auto-compress \
+    --directory "$(bazel --output_base="$DOCS" info bazel-bin)" \
+    --file "$PWD/${ARCHIVE%.tar.gz}.docs.tar.gz" .
+
 cat << EOF
 ## rules_mojo $TAG
 
