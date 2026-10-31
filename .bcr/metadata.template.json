@@ -1,0 +1,22 @@
+{
+  "homepage": "https://github.com/modular/rules_mojo",
+  "maintainers": [
+    {
+      "email": "keithbsmiley@gmail.com",
+      "github": "keith",
+      "name": "Keith Smiley",
+      "github_user_id": 283886
+    },
+    {
+      "email": "atrotta@modular.com",
+      "github": "Ahajha",
+      "name": "Alex Trotta",
+      "github_user_id": 44127594
+    }
+  ],
+  "repository": [
+    "github:modular/rules_mojo"
+  ],
+  "versions": [],
+  "yanked_versions": {}
+}
