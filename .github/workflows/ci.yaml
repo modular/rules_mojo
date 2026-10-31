@@ -57,11 +57,26 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: j178/prek-action@44924fe9ef4a6f88253c4b6b1bf11c689d3ce53d # v3.1.0
 
-  # These six names are required by the existing main CI ruleset. Each reports
-  # the test matrix and pre-commit results; the legacy Bazel labels are aliases.
+  # A stable check name for requiring the full test matrix and pre-commit checks.
+  conclusion:
+    needs: [test, pre-commit]
+    runs-on: ubuntu-latest
+    if: ${{ always() }}
+    steps:
+      - name: report success
+        if: ${{ needs.test.result == 'success' && needs.pre-commit.result == 'success' }}
+        run: echo success
+      - name: report failure
+        if: ${{ needs.test.result != 'success' || needs.pre-commit.result != 'success' }}
+        run: |
+          echo '${{ toJSON(needs.*.result) }}'
+          exit 1
+
+  # Compatibility aliases for the six checks required by the main CI ruleset.
+  # These can be removed once the ruleset requires conclusion directly.
   required-checks:
     name: test (${{ matrix.os }}, ${{ matrix.bazel }})
-    needs: [test, pre-commit]
+    needs: conclusion
     if: ${{ always() }}
     strategy:
       matrix:
@@ -69,10 +84,7 @@ jobs:
         bazel: [latest, last_rc, last_green]
     runs-on: ubuntu-latest
     steps:
-      - name: Require tests and pre-commit to succeed
+      - name: Require conclusion to succeed
         env:
-          TEST_RESULT: ${{ needs.test.result }}
-          PRE_COMMIT_RESULT: ${{ needs.pre-commit.result }}
-        run: |
-          test "$TEST_RESULT" = success
-          test "$PRE_COMMIT_RESULT" = success
+          CONCLUSION_RESULT: ${{ needs.conclusion.result }}
+        run: test "$CONCLUSION_RESULT" = success
