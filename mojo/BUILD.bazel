@@ -1,0 +1,83 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+
+bzl_library(
+    name = "build_settings",
+    srcs = ["build_settings.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["@bazel_skylib//rules:common_settings"],
+)
+
+bzl_library(
+    name = "extensions",
+    srcs = ["extensions.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":mojo_host_platform",
+        "//mojo/private:mojo_gpu_toolchains_repository",
+    ],
+)
+
+bzl_library(
+    name = "mojo_binary",
+    srcs = ["mojo_binary.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["//mojo/private:mojo_binary_test"],
+)
+
+bzl_library(
+    name = "mojo_host_platform",
+    srcs = ["mojo_host_platform.bzl"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "mojo_import",
+    srcs = ["mojo_import.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":providers",
+        "//mojo/private:utils",
+    ],
+)
+
+bzl_library(
+    name = "mojo_library",
+    srcs = ["mojo_library.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":providers",
+        "//mojo/private:utils",
+        "@bazel_skylib//rules:common_settings",
+        "@rules_cc//cc/common",
+    ],
+)
+
+bzl_library(
+    name = "mojo_shared_library",
+    srcs = ["mojo_shared_library.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["//mojo/private:mojo_binary_test"],
+)
+
+bzl_library(
+    name = "mojo_test",
+    srcs = ["mojo_test.bzl"],
+    visibility = ["//visibility:public"],
+    deps = ["//mojo/private:mojo_binary_test"],
+)
+
+bzl_library(
+    name = "providers",
+    srcs = ["providers.bzl"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "toolchain",
+    srcs = ["toolchain.bzl"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":providers",
+        "@rules_cc//cc/common",
+    ],
+)
