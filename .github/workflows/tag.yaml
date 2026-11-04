@@ -1,0 +1,125 @@
+# Inspired by https://github.com/bazel-contrib/rules-template/blob/main/.github/workflows/tag.yaml.
+name: Tag a Release
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 15 * * *'
+
+permissions:
+  contents: read
+
+# Keep this separate from release.yaml's concurrency group: this workflow calls it.
+concurrency:
+  group: automatic-release
+  cancel-in-progress: false
+
+jobs:
+  tag:
+    if: github.repository == 'modular/rules_mojo' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    outputs:
+      new-tag: ${{ steps.tag.outputs.created }}
+      new-tag-version: ${{ steps.tag.outputs.tag_name }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Check if there is a recent release tag
+        id: recent-tag
+        if: github.event_name == 'schedule'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Match the existing unprefixed stable tags, excluding prereleases.
+          if ! TAG=$(git describe --tags --match '[0-9]*.[0-9]*.[0-9]*' \
+              --exclude '*-*' --exclude '*+*' --abbrev=0 2>/dev/null); then
+            echo 'No matching release tag; continue.'
+            echo 'recently-tagged=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          TAG_TIME=$(git log -1 --format=%ct "$TAG")
+          AGE=$(($(date +%s) - TAG_TIME))
+          # Two weeks minus twelve hours accommodates the daily cron schedule.
+          MAX_AGE=$((14 * 24 * 3600 - 12 * 3600))
+          echo "Latest release tag: $TAG ($AGE seconds ago)"
+          if (( AGE < MAX_AGE )); then
+            echo 'recently-tagged=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'recently-tagged=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Calculate the next version
+        id: ccv
+        if: github.event_name != 'schedule' || steps.recent-tag.outputs.recently-tagged != 'true'
+        uses: smlx/ccv@7318e2f25a52dcd550e75384b84983973251a1f8 # v0.10.0
+        with:
+          # Preview first: ccv writes v-prefixed tags, and majors need manual review.
+          write-tag: false
+
+      - name: Create a patch or minor release tag
+        id: tag
+        if: github.event_name != 'schedule' || steps.recent-tag.outputs.recently-tagged != 'true'
+        env:
+          PROPOSED_VERSION: ${{ steps.ccv.outputs.new-tag-version }}
+          VERSION_TYPE: ${{ steps.ccv.outputs.new-tag-version-type }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo 'created=false' >> "$GITHUB_OUTPUT"
+          TAG=${PROPOSED_VERSION#v}
+          case "$VERSION_TYPE" in
+            '')
+              # With unprefixed tags, ccv can report new-tag=true without a bump.
+              echo 'No version increment; nothing to release.'
+              exit 0
+              ;;
+            major)
+              printf 'Major version %s requires a manual release.\n' "$TAG" \
+                | tee -a "$GITHUB_STEP_SUMMARY"
+              exit 0
+              ;;
+            patch|minor) ;;
+            *)
+              echo "Unexpected version increment: $VERSION_TYPE" >&2
+              exit 1
+              ;;
+          esac
+
+          NUMBER='(0|[1-9][0-9]*)'
+          if [[ ! "$TAG" =~ ^$NUMBER\.$NUMBER\.$NUMBER$ ]]; then
+            echo "Expected a stable release version, got: $PROPOSED_VERSION" >&2
+            exit 1
+          fi
+          if git show-ref --verify --quiet "refs/tags/$TAG"; then
+            echo "Tag $TAG already exists locally; nothing to release."
+            exit 0
+          fi
+          REMOTE_TAG=$(git ls-remote --tags origin "refs/tags/$TAG")
+          if [[ -n "$REMOTE_TAG" ]]; then
+            echo "Tag $TAG already exists upstream; nothing to release."
+            exit 0
+          fi
+
+          git tag "$TAG"
+          git push origin "refs/tags/$TAG:refs/tags/$TAG"
+          echo "tag_name=$TAG" >> "$GITHUB_OUTPUT"
+          echo 'created=true' >> "$GITHUB_OUTPUT"
+
+  release:
+    needs: tag
+    if: needs.tag.outputs.new-tag == 'true'
+    uses: ./.github/workflows/release.yaml
+    with:
+      tag_name: ${{ needs.tag.outputs.new-tag-version }}
+    secrets:
+      publish_token: ${{ secrets.BCR_PUBLISH_TOKEN }}
+    permissions:
+      actions: read
+      contents: write
+      id-token: write
+      attestations: write
