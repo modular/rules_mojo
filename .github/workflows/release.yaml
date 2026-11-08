@@ -7,6 +7,10 @@ on:
         description: Existing unprefixed release tag (for example, 0.9.0)
         required: true
         type: string
+      existing_release:
+        description: Attach artifacts to a release already created by release-please
+        default: false
+        type: boolean
     secrets:
       publish_token:
         description: Token for pushing to the BCR fork and opening its pull request
@@ -20,6 +24,10 @@ on:
         description: Existing unprefixed release tag (for example, 0.9.0)
         required: true
         type: string
+      existing_release:
+        description: Retry artifact and BCR publishing for an existing GitHub release
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -45,6 +53,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag_name }}
+          EXISTING_RELEASE: ${{ inputs.existing_release }}
         shell: bash
         run: |
           set -euo pipefail
@@ -66,10 +75,11 @@ jobs:
             git cat-file -e "$COMMIT:$path"
           done
 
-          # Include all pages and allow retries of drafts, preserving published releases.
+          # Include all pages. Published releases require an explicit opt-in,
+          # used by release-please and manual retries after artifact failures.
           PUBLISHED=$(gh api 'repos/modular/rules_mojo/releases?per_page=100' --paginate --slurp \
             | jq --arg tag "$RELEASE_TAG" 'any(.[][]; .tag_name == $tag and .draft == false)')
-          if [[ "$PUBLISHED" == true ]]; then
+          if [[ "$PUBLISHED" == true && "$EXISTING_RELEASE" != true ]]; then
             echo "GitHub release $RELEASE_TAG is already published" >&2
             exit 1
           fi
@@ -95,6 +105,7 @@ jobs:
       tag_name: ${{ needs.validate.outputs.tag_name }}
       prerelease: false
       draft: false
+      generate_release_notes: ${{ !inputs.existing_release }}
       # Cache writes are reserved for upstream main push CI runs.
       mount_bazel_caches: false
       release_files: rules_mojo-*.tar.gz

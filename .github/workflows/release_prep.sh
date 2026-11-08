@@ -53,3 +53,19 @@ SHA-256: \`$SHA\`
 
 Archive and BCR metadata attestations are attached by the release workflow.
 EOF
+
+# The shared release workflow replaces the GitHub release body. Include the
+# matching release-please entry so its reviewed changelog is preserved.
+if [[ -f CHANGELOG.md ]]; then
+    printf '\n'
+    awk -v tag="$TAG" '
+        /^###? \[?[0-9]+\./ {
+            if (found) exit
+            version = $2
+            sub(/^\[/, "", version)
+            sub(/\].*$/, "", version)
+            found = (version == tag)
+        }
+        found { print }
+    ' CHANGELOG.md
+fi

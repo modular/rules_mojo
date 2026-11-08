@@ -36,3 +36,6 @@ mojo_binary(
 ```
 
 See the [tests](tests) directory for more examples.
+
+Maintainers: see the [release guide](.github/RELEASING.md) for release-please
+setup and publishing instructions.
