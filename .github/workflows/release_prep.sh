@@ -17,7 +17,7 @@ fi
 PREFIX="rules_mojo-$TAG"
 ARCHIVE="$PREFIX.tar.gz"
 git rev-parse --verify "${TAG}^{commit}" > /dev/null
-# Keep committed sources intact; the BCR publisher stamps its MODULE.bazel.
+# Archive the committed module version reviewed in the release PR.
 # Refuse to overwrite an existing artifact, and omit gzip timestamps.
 set -o noclobber
 git -C "$(git rev-parse --show-toplevel)" archive --format=tar --prefix="${PREFIX}/" "$TAG" | gzip -n > "$ARCHIVE"
@@ -34,6 +34,10 @@ bazel --output_base="$DOCS" build --target_pattern_file="$TARGETS" --remote_down
 tar --create --auto-compress \
     --directory "$(bazel --output_base="$DOCS" info bazel-bin)" \
     --file "$PWD/${ARCHIVE%.tar.gz}.docs.tar.gz" .
+
+# Use the same changelog entry reviewed in the release PR.
+bash .github/workflows/changelog_entry.sh "$TAG"
+echo
 
 cat << EOF
 ## rules_mojo $TAG
