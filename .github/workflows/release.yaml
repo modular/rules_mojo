@@ -20,21 +20,25 @@ on:
         description: Existing unprefixed release tag (for example, 0.9.0)
         required: true
         type: string
+  push:
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'
 
 permissions:
   contents: read
 
-# Serialize manual and callable release runs to prevent competing preparations.
+# Serialize release runs to prevent competing preparations.
 concurrency:
   group: release
   cancel-in-progress: false
 
 jobs:
   validate:
-    if: github.repository == 'modular/rules_mojo' && github.ref == 'refs/heads/main'
+    if: github.repository == 'modular/rules_mojo' && (github.ref == 'refs/heads/main' || (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')))
     runs-on: ubuntu-latest
     outputs:
       tag_name: ${{ steps.validate.outputs.tag_name }}
+      generate_release_notes: ${{ steps.validate.outputs.generate_release_notes }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -44,7 +48,7 @@ jobs:
         id: validate
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.tag_name }}
+          RELEASE_TAG: ${{ inputs.tag_name || github.ref_name }}
         shell: bash
         run: |
           set -euo pipefail
@@ -66,13 +70,8 @@ jobs:
             git cat-file -e "$COMMIT:$path"
           done
 
-          # Include all pages and allow retries of drafts, preserving published releases.
-          PUBLISHED=$(gh api 'repos/modular/rules_mojo/releases?per_page=100' --paginate --slurp \
-            | jq --arg tag "$RELEASE_TAG" 'any(.[][]; .tag_name == $tag and .draft == false)')
-          if [[ "$PUBLISHED" == true ]]; then
-            echo "GitHub release $RELEASE_TAG is already published" >&2
-            exit 1
-          fi
+          # Release Please creates the GitHub release before packaging. Allow
+          # updating it and retrying uploads, but never republish a BCR version.
           PUBLISHED=$(gh api repos/bazelbuild/bazel-central-registry/contents/modules/rules_mojo/metadata.json \
             -H 'Accept: application/vnd.github.raw+json' \
             | jq --arg tag "$RELEASE_TAG" '.versions | index($tag) != null')
@@ -81,6 +80,16 @@ jobs:
             exit 1
           fi
 
+          ENTRY=''
+          if git cat-file -e "$COMMIT:CHANGELOG.md" 2>/dev/null; then
+            git show "$COMMIT:CHANGELOG.md" > "$RUNNER_TEMP/release-changelog.md"
+            ENTRY=$(bash .github/workflows/changelog_entry.sh "$RELEASE_TAG" "$RUNNER_TEMP/release-changelog.md")
+          fi
+          if [[ -n "$ENTRY" ]]; then
+            echo 'generate_release_notes=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'generate_release_notes=true' >> "$GITHUB_OUTPUT"
+          fi
           echo "tag_name=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           echo "Validated $RELEASE_TAG at upstream main commit $COMMIT"
 
@@ -95,6 +104,7 @@ jobs:
       tag_name: ${{ needs.validate.outputs.tag_name }}
       prerelease: false
       draft: false
+      generate_release_notes: ${{ needs.validate.outputs.generate_release_notes == 'true' }}
       # Cache writes are reserved for upstream main push CI runs.
       mount_bazel_caches: false
       release_files: rules_mojo-*.tar.gz

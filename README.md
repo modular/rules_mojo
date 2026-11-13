@@ -36,3 +36,5 @@ mojo_binary(
 ```
 
 See the [tests](tests) directory for more examples.
+
+For release automation and maintainer setup, see [Releasing](RELEASING.md).
