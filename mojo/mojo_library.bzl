@@ -1,6 +1,7 @@
 """Compile Mojo files into a precompiled object (mojoc) that can be consumed by
 other Mojo targets."""
 
+load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//mojo:providers.bzl", "MojoInfo")
@@ -11,6 +12,29 @@ def _format_include(arg):
 
 def _format_root(arg):
     return arg.dirname
+
+def _format_root_import(ctx):
+    package, import_path = ctx
+    return ["-I", paths.normalize(paths.join(package, import_path))]
+
+def _count_up_dirs(path):
+    # type: (string) -> int
+    # We make some assumptions about the import path for simplicity.
+    # The grammar is essentially ("." | ".." "/.."*) "/"?
+    segments = path.split("/")
+
+    if len(segments) == 1 and segments[0] == ".":
+        return 0
+
+    # We allow a trailing slash
+    if segments[-1] == "":
+        segments.pop()
+
+    for segment in segments:
+        if segment != "..":
+            fail("invalid import path: {}".format(path))
+
+    return len(segments)
 
 def _mojo_library_implementation(ctx):
     mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
@@ -45,6 +69,14 @@ def _mojo_library_implementation(ctx):
     for file in ctx.files.srcs:
         if not file.dirname.startswith(root_directory):
             args.add_all([file], map_each = _format_include)
+
+    up_dirs = _count_up_dirs(ctx.attr.import_path)
+    if up_dirs > 0:
+        args.add("-namespace")
+        package_parts = ctx.label.package.split("/")
+        namespace = ".".join(package_parts[len(package_parts) - up_dirs:])
+        args.add(namespace)
+        args.add_all([(ctx.label.package, ctx.attr.import_path)], map_each = _format_root_import)
 
     output_group_kwargs = {}
     precompile_outputs = [mojo_precmp_file]
@@ -145,6 +177,8 @@ mojo_shared_library that transitively depends on it.
             doc = """
 Path relative to this package where it should be imported from.
 Generally something like `.`, `..`, or `../..`.
+
+Note: If anything other than ".", implies a `-namespace`.
 """,
             default = ".",
         ),

@@ -6,7 +6,5 @@ mojo_library(
         "__init__.mojo",
     ],
     import_path = "..",
-    # TODO: Mojo doesn't officially support this yet, re-enable when it does
-    tags = ["manual"],
     visibility = ["//tests:__subpackages__"],
 )
