@@ -41,10 +41,28 @@ def _get_rocm_constraint(rctx, blob, gpu_mapping):
         return _get_amdgpu_constraint(rctx, series, gpu_mapping)
     fail("Unrecognized rocm-smi output, please report: {}".format(blob))
 
+def _rocm_tool(rctx, name):
+    # ROCm installs its tools under /opt/rocm/bin, which a repository rule's
+    # PATH may not include.
+    path = rctx.path("/opt/rocm/bin/" + name)
+    return path if path.exists else None
+
 def _get_amd_constraint(rctx, blob, gpu_mapping):
     for value in blob:
-        series = value["board"]["product_name"]
-        return _get_amdgpu_constraint(rctx, series, gpu_mapping)
+        # Some boards, such as the Framework Desktop's Strix Halo, report "N/A"
+        # for every board field, so fall back to the ASIC's marketing name and
+        # its gfx target.
+        board = value.get("board", {})
+        asic = value.get("asic", {})
+        candidates = [
+            board.get("product_name", ""),
+            asic.get("market_name", ""),
+            asic.get("target_graphics_version", ""),
+        ]
+        for series in candidates:
+            if series and series != "N/A" and [name for name in gpu_mapping if name in series]:
+                return _get_amdgpu_constraint(rctx, series, gpu_mapping)
+        return _get_amdgpu_constraint(rctx, " / ".join(candidates), gpu_mapping)
     fail("Unrecognized amd-smi output, please report: {}".format(blob))
 
 def _get_nvidia_constraint(rctx, lines, gpu_mapping):
@@ -129,8 +147,8 @@ def _impl(rctx):
         nvidia_smi = rctx.which("nvidia-smi")
 
         # amd-smi supersedes rocm-smi
-        amd_smi = rctx.which("amd-smi")
-        rocm_smi = rctx.which("rocm-smi")
+        amd_smi = rctx.which("amd-smi") or _rocm_tool(rctx, "amd-smi")
+        rocm_smi = rctx.which("rocm-smi") or _rocm_tool(rctx, "rocm-smi")
 
         _verbose_log(rctx, "nvidia-smi path: {}, rocm-smi path: {}, amd-smi path: {}".format(nvidia_smi, rocm_smi, amd_smi))
 
