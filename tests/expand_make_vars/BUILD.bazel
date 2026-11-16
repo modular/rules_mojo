@@ -52,6 +52,17 @@ mojo_test(
     ],
 )
 
+mojo_test(
+    name = "verbose_repo_path",
+    srcs = ["main.mojo"],
+    additional_compiler_inputs = ["@rules_mojo//tests/expand_make_vars:input.bc"],
+    copts = [
+        "--bitcode-libs",
+        # Some arbitrary repo file
+        "$(rootpath @rules_mojo//tests/expand_make_vars:input.bc)",
+    ],
+)
+
 mojo_library(
     name = "single_arg_relative_path_lib",
     srcs = ["__init__.mojo"],

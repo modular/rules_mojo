@@ -63,6 +63,18 @@ def is_exec_config(ctx):
 
     return False
 
+def _package_relative_label(ctx, label):
+    # type: (ctx, string) -> Label
+    """Emulate ctx.package_relative_label in Bazel 8
+
+    Can drop this and replace with ctx.package_relative_label once we drop 8.x support.
+    """
+
+    if label.startswith(":"):
+        # Relative path
+        label = "//" + ctx.label.package + label
+    return Label(label)
+
 def _extract_label(ctx, copt):
     # type: (ctx, string) -> tuple[string, Label]
     """Split a copt into a format string and a label.
@@ -93,8 +105,7 @@ def _extract_label(ctx, copt):
     label_string = copt[labelstart:labelend]
     format_string = copt[:start] + "%s" + copt[end + 1:]
 
-    # TODO: 8.x support
-    label = ctx.package_relative_label(label_string)
+    label = _package_relative_label(ctx, label_string)
 
     return format_string, label
 
@@ -119,5 +130,7 @@ def handle_copt(ctx, copt, args):
             if len(files) != 1:
                 fail("expected exactly one file")
             args.add(files[0], format = format_string)
+            return
+        fail("input not found in additional_compiler_inputs")
     else:
         args.add(copt)
