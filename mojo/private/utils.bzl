@@ -75,6 +75,8 @@ def _package_relative_label(ctx, label):
         label = "@@" + ctx.label.repo_name + "//" + ctx.label.package + label
     elif label.startswith("//"):
         label = "@@" + ctx.label.repo_name + label
+    elif label.startswith("@") and not label.startswith("@@"):
+        label = "@" + label
     return Label(label)
 
 def _extract_label(ctx, copt):
@@ -111,6 +113,19 @@ def _extract_label(ctx, copt):
 
     return format_string, label
 
+def _labels_similar(label1, label2):
+    """Without the full repo mapping, determine if two labels are close enough to count them as equal.
+
+    Also replacable when `ctx.package_relative_label` is available."""
+
+    if label1.name != label2.name:
+        return False
+    if label1.package != label2.package:
+        return False
+    if label1.repo_name not in label2.repo_name and label2.repo_name not in label1.repo_name:
+        return False
+    return True
+
 def handle_copt(ctx, copt, args):
     # type: (ctx, string, Args) -> None
     """Handles make variable expansion in copts
@@ -126,7 +141,7 @@ def handle_copt(ctx, copt, args):
     if "$(" in copt:
         format_string, label = _extract_label(ctx, copt)
         for input in ctx.attr.additional_compiler_inputs:
-            if label != input.label:
+            if label != input.label and not _labels_similar(label, input.label):
                 continue
             files = input.files.to_list()
             if len(files) != 1:
