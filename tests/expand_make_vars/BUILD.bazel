@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
 load("//mojo:mojo_library.bzl", "mojo_library")
 load("//mojo:mojo_test.bzl", "mojo_test")
 
@@ -8,8 +9,6 @@ load("//mojo:mojo_test.bzl", "mojo_test")
 # This is the primary use case for this feature, but also thankfully
 # `--bitcode-libs` seems to not care about the contents of the file,
 # only that it can open it.
-
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
 genrule(
     name = "gen_bc",
