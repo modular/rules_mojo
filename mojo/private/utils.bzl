@@ -72,7 +72,9 @@ def _package_relative_label(ctx, label):
 
     if label.startswith(":"):
         # Relative path
-        label = "//" + ctx.label.package + label
+        label = "@@" + ctx.label.repo_name + "//" + ctx.label.package + label
+    elif label.startswith("//"):
+        label = "@@" + ctx.label.repo_name + label
     return Label(label)
 
 def _extract_label(ctx, copt):
@@ -131,6 +133,6 @@ def handle_copt(ctx, copt, args):
                 fail("expected exactly one file")
             args.add(files[0], format = format_string)
             return
-        fail("input not found in additional_compiler_inputs")
+        fail("input {} not found in additional_compiler_inputs".format(label))
     else:
         args.add(copt)
