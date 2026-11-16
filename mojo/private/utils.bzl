@@ -62,3 +62,62 @@ def is_exec_config(ctx):
         return True
 
     return False
+
+def _extract_label(ctx, copt):
+    # type: (ctx, string) -> tuple[string, Label]
+    """Split a copt into a format string and a label.
+
+    Take something like `--foo=$(location :bar)` and get `:bar` as a label
+    This is a minimum working version, there are likely cases that don't work,
+    but there are currently no uses for those extra cases.
+    """
+
+    start = -1
+    labelstart = -1
+    labelend = -1
+    end = -1
+
+    # Not sure if we should even support all of these.
+    for var in ["execpath", "rootpath", "rlocationpath", "location"]:
+        start = copt.find("$(" + var)
+        if start != -1:
+            # Add the "$(" and a space at the end
+            labelstart = start + 2 + len(var) + 1
+            break
+    if start == -1:
+        fail("expected one of $(execpath), $(rootpath), $(rlocationpath), or $(location)")
+    end = start + copt[start:].find(")")
+    if end == -1:
+        fail("expected closing )")
+    labelend = end
+    label_string = copt[labelstart:labelend]
+    format_string = copt[:start] + "%s" + copt[end + 1:]
+
+    # TODO: 8.x support
+    label = ctx.package_relative_label(label_string)
+
+    return format_string, label
+
+def handle_copt(ctx, copt, args):
+    # type: (ctx, string, Args) -> None
+    """Handles make variable expansion in copts
+
+    This is primarily necessary to support path mapping
+    when labels are passed via a copt.
+
+    Args:
+        ctx: the context
+        copt: the copt
+        args: Args object to add to
+    """
+    if "$(" in copt:
+        format_string, label = _extract_label(ctx, copt)
+        for input in ctx.attr.additional_compiler_inputs:
+            if label != input.label:
+                continue
+            files = input.files.to_list()
+            if len(files) != 1:
+                fail("expected exactly one file")
+            args.add(files[0], format = format_string)
+    else:
+        args.add(copt)

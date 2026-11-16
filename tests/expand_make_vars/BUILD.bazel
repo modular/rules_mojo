@@ -1,0 +1,98 @@
+load("//mojo:mojo_library.bzl", "mojo_library")
+load("//mojo:mojo_test.bzl", "mojo_test")
+
+# These tests ensure that we can pass `$(execpath :foo)` and similar to
+# `copts` and have them correctly expand when path mapping.
+
+# Note that for these tests, we use `--bitcode-libs` with arbitrary files.
+# This is the primary use case for this feature, but also thankfully
+# `--bitcode-libs` seems to not care about the contents of the file,
+# only that it can open it.
+
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+
+genrule(
+    name = "gen_bc",
+    outs = ["input.bc"],
+    cmd = "touch $(OUTS)",
+)
+
+# Also randomly sprinkle in various builtins (location, etc.) to show they work.
+
+mojo_test(
+    name = "single_arg_relative_path",
+    srcs = ["main.mojo"],
+    additional_compiler_inputs = [":input.bc"],
+    copts = ["--bitcode-libs=$(location :input.bc)"],
+)
+
+mojo_test(
+    name = "two_args_relative_path",
+    srcs = ["main.mojo"],
+    additional_compiler_inputs = [":input.bc"],
+    copts = [
+        "--bitcode-libs",
+        "$(execpath :input.bc)",
+    ],
+)
+
+mojo_test(
+    name = "single_arg_absolute_path",
+    srcs = ["main.mojo"],
+    additional_compiler_inputs = ["//tests/expand_make_vars:input.bc"],
+    copts = ["--bitcode-libs=$(rlocationpath //tests/expand_make_vars:input.bc)"],
+)
+
+mojo_test(
+    name = "two_args_absolute_path",
+    srcs = ["main.mojo"],
+    additional_compiler_inputs = ["//tests/expand_make_vars:input.bc"],
+    copts = [
+        "--bitcode-libs",
+        "$(rootpath //tests/expand_make_vars:input.bc)",
+    ],
+)
+
+mojo_library(
+    name = "single_arg_relative_path_lib",
+    srcs = ["__init__.mojo"],
+    additional_compiler_inputs = [":input.bc"],
+    copts = ["--bitcode-libs=$(rootpath :input.bc)"],
+)
+
+mojo_library(
+    name = "two_args_relative_path_lib",
+    srcs = ["__init__.mojo"],
+    additional_compiler_inputs = [":input.bc"],
+    copts = [
+        "--bitcode-libs",
+        "$(rlocationpath :input.bc)",
+    ],
+)
+
+mojo_library(
+    name = "single_arg_absolute_path_lib",
+    srcs = ["__init__.mojo"],
+    additional_compiler_inputs = ["//tests/expand_make_vars:input.bc"],
+    copts = ["--bitcode-libs=$(execpath //tests/expand_make_vars:input.bc)"],
+)
+
+mojo_library(
+    name = "two_args_absolute_path_lib",
+    srcs = ["__init__.mojo"],
+    additional_compiler_inputs = ["//tests/expand_make_vars:input.bc"],
+    copts = [
+        "--bitcode-libs",
+        "$(location //tests/expand_make_vars:input.bc)",
+    ],
+)
+
+build_test(
+    name = "lib_build_tests",
+    targets = [
+        "single_arg_relative_path_lib",
+        "two_args_relative_path_lib",
+        "single_arg_absolute_path_lib",
+        "two_args_absolute_path_lib",
+    ],
+)
