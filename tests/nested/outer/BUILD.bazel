@@ -1,3 +1,4 @@
+load("@mojo_toolchains//:version.bzl", "MOJO_VERSION")
 load("//mojo:mojo_library.bzl", "mojo_library")
 
 mojo_library(
@@ -6,5 +7,6 @@ mojo_library(
         "__init__.mojo",
     ],
     import_path = "..",
+    target_compatible_with = [] if MOJO_VERSION >= (1, 3, 0) else ["@platforms//:incompatible"],  # Needs Mojo 1.3+
     visibility = ["//tests:__subpackages__"],
 )

@@ -164,11 +164,15 @@ toolchain(
 
     rctx.file("BUILD.bazel", content = "\n".join(lines))
 
+    version = tuple([int(part) for part in rctx.attr.version.split(".")[:3]])
+    rctx.file("version.bzl", content = "MOJO_VERSION = {}\n".format(repr(version)))
+
 _mojo_toolchain_hub = repository_rule(
     implementation = _mojo_toolchain_hub_impl,
     doc = "A convenience repository for registering all potential Mojo toolchains at once.",
     attrs = {
         "platforms": attr.string_list(doc = "The platforms to register Mojo toolchains for."),
+        "version": attr.string(doc = "The Mojo toolchain version, exposed as MOJO_VERSION in version.bzl.", mandatory = True),
     },
 )
 
@@ -205,6 +209,7 @@ def _setup_toolchains(root_module, rules_mojo_module):
     _mojo_toolchain_hub(
         name = "mojo_toolchains",
         platforms = _PLATFORMS,
+        version = tags.version,
     )
 
 def _mojo_impl(mctx):
