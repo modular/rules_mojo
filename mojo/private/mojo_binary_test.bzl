@@ -9,7 +9,7 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_python//python:py_info.bzl", "PyInfo")
 load("//mojo:providers.bzl", "MojoInfo")
 load(":transitions.bzl", "python_version_transition")
-load(":utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "format_import", "is_exec_config")
+load(":utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "format_import", "handle_copt", "is_exec_config")
 
 _PYTHON_TOOLCHAIN_TYPE = "@rules_python//python:toolchain_type"
 _ATTRS = {
@@ -131,10 +131,9 @@ def _mojo_binary_test_implementation(ctx, *, shared_library = False):
     # Ignore default mojo flags for exec built binaries
     if not is_exec_config(ctx):
         args.add_all(ctx.attr._mojo_copts[BuildSettingInfo].value)
-    args.add_all([
-        ctx.expand_location(copt, targets = ctx.attr.additional_compiler_inputs)
-        for copt in ctx.attr.copts
-    ])
+    for copt in ctx.attr.copts:
+        handle_copt(ctx, copt, args)
+
     if ctx.attr.enable_assertions:
         args.add("-D", "ASSERT=all")
 

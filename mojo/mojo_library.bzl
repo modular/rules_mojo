@@ -4,7 +4,7 @@ other Mojo targets."""
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//mojo:providers.bzl", "MojoInfo")
-load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "format_import", "is_exec_config")
+load("//mojo/private:utils.bzl", "MOJO_EXTENSIONS", "collect_mojoinfo", "format_import", "handle_copt", "is_exec_config")
 
 def _format_include(arg):
     return ["-I", arg.dirname]
@@ -25,10 +25,8 @@ def _mojo_library_implementation(ctx):
     args.add_all(mojo_toolchain.precompile_copts)
     if not is_exec_config(ctx):
         args.add_all(ctx.attr._mojo_precompile_copts[BuildSettingInfo].value)
-    args.add_all([
-        ctx.expand_location(copt, targets = ctx.attr.additional_compiler_inputs)
-        for copt in ctx.attr.copts
-    ])
+    for copt in ctx.attr.copts:
+        handle_copt(ctx, copt, args)
 
     # NOTE: cc deps are not passed to 'mojo precompile', they are only
     # propagated to the compile and link actions of the depending binary.
