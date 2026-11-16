@@ -4,7 +4,7 @@ load("//mojo:mojo_host_platform.bzl", "mojo_host_platform")
 load("//mojo/private:mojo_gpu_toolchains_repository.bzl", "mojo_gpu_toolchains_repository")
 
 _PLATFORMS = ["linux_aarch64", "linux_x86_64", "macos_arm64"]
-_DEFAULT_VERSION = "1.2.0"
+_DEFAULT_VERSION = "1.3.0.dev2026111601"
 
 # Generated from official wheel metadata; update with tools/getshas.py.
 _KNOWN_RELEASES = {
@@ -60,6 +60,25 @@ _KNOWN_RELEASES = {
         "mojo_compiler_mojo_libs": struct(
             url = "https://files.pythonhosted.org/packages/3d/bb/9602cbee467102584721c700dda8033af67c3888c6c8edb6f66275c1df74/mojo_compiler_mojo_libs-1.2.0-py3-none-any.whl",
             sha256 = "3d631f7e798c11d0029c4a892ebae1f5742751fac0c526af74b45a8ae07c3acb",
+        ),
+    },
+    # TODO: Remove when 1.3.0 releases
+    "1.3.0.dev2026111601": {
+        "linux_aarch64": struct(
+            url = "https://whl.modular.com/nightly/mojo-compiler/mojo_compiler-1.3.0.dev2026111601-py3-none-manylinux_2_34_aarch64.whl",
+            sha256 = "963141d97bed5d7afc01eea54dcfc12143b345f02ee8ed91a2f08254da24604c",
+        ),
+        "linux_x86_64": struct(
+            url = "https://whl.modular.com/nightly/mojo-compiler/mojo_compiler-1.3.0.dev2026111601-py3-none-manylinux_2_34_x86_64.whl",
+            sha256 = "6a74919264b34f19b5674587e4ef9b8105241897800316f8aa40c545533fca0f",
+        ),
+        "macos_arm64": struct(
+            url = "https://whl.modular.com/nightly/mojo-compiler/mojo_compiler-1.3.0.dev2026111601-py3-none-macosx_13_0_arm64.whl",
+            sha256 = "1a24cdd221274ab7c6aa397c329f36c958ab5dd86a575a343e7963908efbb19f",
+        ),
+        "mojo_compiler_mojo_libs": struct(
+            url = "https://whl.modular.com/nightly/mojo-compiler-mojo-libs/mojo_compiler_mojo_libs-1.3.0.dev2026111601-py3-none-any.whl",
+            sha256 = "32b44ec09bbe092715bc7e0333bdcf089e24ed74196f1ac62ab489c7977049fc",
         ),
     },
 }
@@ -145,11 +164,15 @@ toolchain(
 
     rctx.file("BUILD.bazel", content = "\n".join(lines))
 
+    version = tuple([int(part) for part in rctx.attr.version.split(".")[:3]])
+    rctx.file("version.bzl", content = "MOJO_VERSION = {}\n".format(repr(version)))
+
 _mojo_toolchain_hub = repository_rule(
     implementation = _mojo_toolchain_hub_impl,
     doc = "A convenience repository for registering all potential Mojo toolchains at once.",
     attrs = {
         "platforms": attr.string_list(doc = "The platforms to register Mojo toolchains for."),
+        "version": attr.string(doc = "The Mojo toolchain version, exposed as MOJO_VERSION in version.bzl.", mandatory = True),
     },
 )
 
@@ -186,6 +209,7 @@ def _setup_toolchains(root_module, rules_mojo_module):
     _mojo_toolchain_hub(
         name = "mojo_toolchains",
         platforms = _PLATFORMS,
+        version = tags.version,
     )
 
 def _mojo_impl(mctx):

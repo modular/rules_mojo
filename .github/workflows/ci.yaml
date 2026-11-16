@@ -48,6 +48,15 @@ jobs:
           - os: ubuntu-24.04-arm
             bazel: 8.x
             mojo: 1.1.0
+          - os: macos-15
+            bazel: 8.x
+            mojo: 1.2.0
+          - os: ubuntu-latest
+            bazel: 8.x
+            mojo: 1.2.0
+          - os: ubuntu-24.04-arm
+            bazel: 8.x
+            mojo: 1.2.0
       fail-fast: false
     runs-on: ${{ matrix.os }}
     env:
