@@ -5,13 +5,20 @@ PR as changes land on upstream `main`. A maintainer reviews and merges that PR
 to release. The PR updates `MODULE.bazel`, `CHANGELOG.md`, and the release manifest
 using the Bazel release strategy. Tags remain unprefixed, for example `0.9.0`.
 
-Use Conventional Commit PR titles and squash merges:
+Use [Conventional Commit](https://www.conventionalcommits.org/) PR titles and
+squash merges:
 
 - `fix:` increments the patch version.
 - `feat:` increments the minor version.
 - `!` or a `BREAKING CHANGE:` footer increments the minor version before 1.0.0
   and the major version afterward.
 - Changes such as `chore:` and `ci:` normally do not trigger a release.
+
+The `Validate PR title` check accepts titles such as `fix: correct imports`,
+`feat(toolchain): add support`, and `refactor!: remove deprecated API`. Scopes
+are optional, and subjects may start with an uppercase letter. Use `!` in the
+title to indicate a breaking change; a `BREAKING CHANGE:` footer belongs in the
+squash commit body.
 
 To override the proposed version, include a `Release-As: X.Y.Z` footer in a commit
 on `main`, such as a PR's squash commit. Review the updated release PR before
@@ -24,16 +31,27 @@ Release Please uses the built-in `GITHUB_TOKEN`. Enable **Allow GitHub Actions t
 create and approve pull requests** in Settings > Actions > General, subject to
 organization policy. No separate release-please token is needed.
 
+A repository administrator must configure squash merges to default to the PR
+title in Settings > General > Pull Requests. After the title workflow is on
+`main` and has reported a result, add `Validate PR title` from GitHub Actions to
+the required status checks in the existing `main CI` ruleset. Keep the current
+required checks. Adding the workflow alone does not make it a merge requirement.
+
 BCR publication requires a `modular/bazel-central-registry` fork and the
 `BCR_PUBLISH_TOKEN` repository secret with access to push to that fork and open
 the registry PR. See the publisher's
 [token setup](https://github.com/bazel-contrib/publish-to-bcr#3-create-a-personal-access-token).
 
-PRs created with `GITHUB_TOKEN` do not automatically trigger other workflows.
-The Release Please workflow explicitly dispatches CI on the release PR branch.
-This runs the complete Bazel matrix, pre-commit checks, `conclusion`, and the
-existing compatibility checks. To rerun CI, dispatch the Test workflow on the
-release PR branch. Cache writes remain restricted to upstream `main` push CI.
+Release Please explicitly dispatches the Test workflow on its PR branch, running
+the Bazel matrix, pre-commit, `conclusion`, and compatibility checks. Dispatch
+Test on that branch to rerun it. Cache writes remain restricted to upstream
+`main` push CI.
+
+Title validation runs separately on PR opens, reopens, edits, and new commits.
+For bot-created release PRs, GitHub can place these runs in an approval-required
+state. A maintainer with write access selects **Approve workflows to run** in
+the PR merge box to start them; editing the description is not required. See
+[GitHub's workflow trigger rules](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow#triggering-a-workflow-from-a-workflow).
 
 ## Release and recovery
 
