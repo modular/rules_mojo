@@ -2,8 +2,8 @@
 
 load("@bazel_skylib//lib:paths.bzl", "paths")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain", "use_cpp_toolchain")
 load("@build_bazel_rules_android//:link_hack.bzl", "link_hack")  # See link_hack.bzl for details
+load("@rules_cc//cc:find_cc_toolchain.bzl", "find_cc_toolchain", "use_cc_toolchain")
 load("@rules_cc//cc/common:cc_common.bzl", "cc_common")
 load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("@rules_python//python:py_info.bzl", "PyInfo")
@@ -57,7 +57,7 @@ by bazel.
     ),
 }
 
-_TOOLCHAINS = use_cpp_toolchain() + [
+_TOOLCHAINS = use_cc_toolchain() + [
     _PYTHON_TOOLCHAIN_TYPE,
 ]
 
@@ -94,7 +94,7 @@ def _format_include(arg):
     return ["-I", arg.dirname]
 
 def _mojo_binary_test_implementation(ctx, *, shared_library = False):
-    cc_toolchain = find_cpp_toolchain(ctx)
+    cc_toolchain = find_cc_toolchain(ctx)
     mojo_toolchain = ctx.exec_groups["mojo_compile"].toolchains["//:toolchain_type"].mojo_toolchain_info
     build_env = getattr(ctx.exec_groups["mojo_compile"].toolchains["//:toolchain_type"], "build_env", {})
     runtime_env_extra = getattr(ctx.exec_groups["mojo_compile"].toolchains["//:toolchain_type"], "runtime_env", {})

@@ -1,0 +1,40 @@
+load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+
+package(default_visibility = ["//mojo:__subpackages__"])
+
+bzl_library(
+    name = "mojo_binary_test",
+    srcs = ["mojo_binary_test.bzl"],
+    deps = [
+        ":transitions",
+        ":utils",
+        "//mojo:providers",
+        "@bazel_skylib//lib:paths",
+        "@bazel_skylib//rules:common_settings",
+        "@build_bazel_rules_android//:link_hack.bzl",
+        "@rules_cc//cc:find_cc_toolchain_bzl",
+        "@rules_cc//cc/common",
+        "@rules_python//python:py_info_bzl",
+    ],
+)
+
+bzl_library(
+    name = "mojo_gpu_toolchains_repository",
+    srcs = ["mojo_gpu_toolchains_repository.bzl"],
+)
+
+bzl_library(
+    name = "transitions",
+    srcs = ["transitions.bzl"],
+)
+
+bzl_library(
+    name = "utils",
+    srcs = ["utils.bzl"],
+    deps = [
+        "//mojo:providers",
+        "@bazel_features//:features",
+        "@bazel_skylib//lib:paths",
+        "@rules_cc//cc/common",
+    ],
+)
