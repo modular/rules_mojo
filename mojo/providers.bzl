@@ -12,12 +12,17 @@ MojoInfo = provider(
 MojoToolchainInfo = provider(
     doc = "Provider holding the tools for building Mojo targets.",
     fields = {
-        "all_tools": "All the files that must be available in actions in order for the toolchain to work.",
         "copts": "Additional compiler options to pass to the Mojo compiler.",
+        "build_env": "Dict of environment variables to set during compilation. Additive on precompile_env.",
+        "build_tools": "Extra files to make available to the compiler during compilation. Additive on precompile_tools.",
         "precompile_copts": "Additional compiler options to pass to the Mojo compiler when running 'mojo precompile'.",
+        "precompile_env": "Dict of environment variables to set during precompilation.",
+        "precompile_tools": "Extra files to make available to the compiler during precompilation.",
         "lld": "The lld compiler executable to link with",
         "mojo": "The mojo compiler executable to build with",
         "implicit_deps": "Implicit dependencies that every target should depend on, providing either CcInfo, or MojoInfo",
+        "runtime_env": "Dict of environment variables to set during runtime.",
+        "extra_runfiles": "Extra files to make available during runtime.",
     },
 )
 

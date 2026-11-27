@@ -4,10 +4,15 @@ load("@rules_cc//cc/common:cc_info.bzl", "CcInfo")
 load("//mojo:providers.bzl", "MojoCoptsToolchainInfo", "MojoInfo", "MojoToolchainInfo")
 
 def _mojo_toolchain_impl(ctx):
-    tool_files = []
-    for dep in ctx.attr.implicit_deps + ctx.attr.extra_tools + [ctx.attr.lld, ctx.attr.mojo]:
-        tool_files.append(dep[DefaultInfo].default_runfiles.files)
-        tool_files.append(dep[DefaultInfo].files)
+    precompile_files = []
+    for dep in ctx.attr.precompile_tools + [ctx.attr.mojo]:
+        precompile_files.append(dep[DefaultInfo].default_runfiles.files)
+        precompile_files.append(dep[DefaultInfo].files)
+
+    build_files = []
+    for dep in ctx.attr.build_tools + [ctx.attr.lld]:
+        build_files.append(dep[DefaultInfo].default_runfiles.files)
+        build_files.append(dep[DefaultInfo].files)
 
     copts = list(ctx.attr.copts)
     precompile_copts = list(ctx.attr.precompile_copts)
@@ -29,12 +34,17 @@ def _mojo_toolchain_impl(ctx):
     return [
         platform_common.ToolchainInfo(
             mojo_toolchain_info = MojoToolchainInfo(
-                all_tools = tool_files,
                 copts = copts,
+                build_env = ctx.attr.build_env,
+                build_tools = build_files,
                 precompile_copts = precompile_copts,
+                precompile_env = ctx.attr.precompile_env,
+                precompile_tools = precompile_files,
                 lld = ctx.executable.lld,
                 mojo = ctx.executable.mojo,
                 implicit_deps = ctx.attr.implicit_deps,
+                runtime_env = ctx.attr.runtime_env,
+                extra_runfiles = ctx.attr.extra_runfiles,
             ),
         ),
     ]
@@ -46,16 +56,31 @@ mojo_toolchain = rule(
             mandatory = False,
             doc = "Additional compiler options to pass to the Mojo compiler.",
         ),
-        "precompile_copts": attr.string_list(
+        "build_env": attr.string_dict(
             mandatory = False,
-            doc = "Additional compiler options to pass to the Mojo compiler when running 'mojo precompile'.",
+            doc = "Dict of environment variables to set during compilation. Additive on precompile_env.",
         ),
-        "extra_tools": attr.label_list(
+        "build_tools": attr.label_list(
             providers = [DefaultInfo],
             allow_files = True,
             mandatory = False,
             cfg = "exec",
-            doc = "Additional tools to make available to every Mojo action.",
+            doc = "Additional tools to make available to Mojo compile actions. Additive on precompile_tools.",
+        ),
+        "precompile_copts": attr.string_list(
+            mandatory = False,
+            doc = "Additional compiler options to pass to the Mojo compiler when running 'mojo precompile'.",
+        ),
+        "precompile_env": attr.string_dict(
+            mandatory = False,
+            doc = "Dict of environment variables to set during precompilation.",
+        ),
+        "precompile_tools": attr.label_list(
+            providers = [DefaultInfo],
+            allow_files = True,
+            mandatory = False,
+            cfg = "exec",
+            doc = "Additional tools to make available to Mojo precompile actions.",
         ),
         "lld": attr.label(
             allow_files = True,
@@ -76,6 +101,17 @@ mojo_toolchain = rule(
             mandatory = True,
             cfg = "target",
             doc = "Implicit dependencies that every target should depend on, providing either CcInfo, or MojoInfo.",
+        ),
+        "runtime_env": attr.string_dict(
+            mandatory = False,
+            doc = "Dict of environment variables to set on compiled Mojo programs at runtime.",
+        ),
+        "extra_runfiles": attr.label_list(
+            providers = [DefaultInfo],
+            allow_files = True,
+            mandatory = False,
+            cfg = "target",
+            doc = "Additional files to make available to compiled Mojo programs at runtime.",
         ),
         "_macos_constraint": attr.label(
             default = Label("@platforms//os:macos"),
