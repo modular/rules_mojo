@@ -38,7 +38,6 @@ def _count_up_dirs(path):
 
 def _mojo_library_implementation(ctx):
     mojo_toolchain = ctx.toolchains["//:toolchain_type"].mojo_toolchain_info
-    build_env = getattr(ctx.toolchains["//:toolchain_type"], "build_env", {})
 
     mojo_precmp_file = ctx.actions.declare_file(ctx.label.name + ".mojoc")
     args = ctx.actions.args()
@@ -89,7 +88,7 @@ def _mojo_library_implementation(ctx):
     ctx.actions.run(
         executable = mojo_toolchain.mojo,
         inputs = depset(ctx.files.srcs + ctx.files.additional_compiler_inputs, transitive = [transitive_mojodeps]),
-        tools = mojo_toolchain.all_tools,
+        tools = mojo_toolchain.precompile_tools,
         outputs = precompile_outputs,
         arguments = [args, file_args],
         mnemonic = "MojoPrecompile",
@@ -98,7 +97,7 @@ def _mojo_library_implementation(ctx):
             "MODULAR_CRASH_REPORTING_ENABLED": "false",
             "PATH": "/dev/null",  # Avoid using the host's PATH
             "TEST_TMPDIR": ".",  # Make sure any cache files are written to somewhere bazel will cleanup
-        } | build_env,
+        } | mojo_toolchain.build_env,
         use_default_shell_env = True,
         toolchain = "//:toolchain_type",
         execution_requirements = {

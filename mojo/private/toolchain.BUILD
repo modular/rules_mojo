@@ -66,12 +66,13 @@ mojo_import(
 
 mojo_toolchain(
     name = "mojo_toolchain",
-    extra_tools = [lib[1] for lib in _COMPILER_LIBRARIES],
+    build_tools = [lib[1] for lib in _COMPILER_LIBRARIES],
     implicit_deps = [
         name
         for name, _ in _RUNTIME_LIBRARIES
     ] + ([":std"] if "{INCLUDE_MOJOPKGS}" else []),
     lld = "bin/lld",
     mojo = "bin/mojo",
+    precompile_tools = [lib[1] for lib in _COMPILER_LIBRARIES],
     visibility = ["//visibility:public"],
 )
